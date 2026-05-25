@@ -1,0 +1,2100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grimório — Ficha de RPG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* ═══════════════════════════════════════
+   GRIMÓRIO — MEDIEVAL MINIMALIST DARK
+   ═══════════════════════════════════════ */
+:root {
+  --bg:       #0e0c09;
+  --surface:  #161310;
+  --raised:   #1e1a14;
+  --border:   #2e2518;
+  --border-hi:#4a3a20;
+  --gold:     #c8a84b;
+  --gold-dim: #7a6330;
+  --gold-pale:#f0d98a;
+  --blood:    #8b1a1a;
+  --blood-hi: #c0392b;
+  --text:     #d4c9b0;
+  --text-dim: #7a6f5a;
+  --text-hi:  #f0e8d0;
+  --hp-green: #2d6e4e;
+  --hp-yellow:#8a6a1a;
+  --hp-red:   #7a1a1a;
+  --radius:   4px;
+  --shadow:   0 2px 12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:'Crimson Pro',Georgia,serif;
+  font-size:15px;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* subtle grain */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.5;
+}
+
+/* ── Typography ── */
+.font-title{font-family:'Cinzel Decorative',serif}
+.font-label{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase}
+input,textarea,select{font-family:'Crimson Pro',Georgia,serif}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px}
+
+/* ═══════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════ */
+.app-header{
+  position:sticky;top:0;z-index:200;
+  height:52px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:1rem;
+  padding:0 1.25rem;
+}
+
+.logo{
+  font-family:'Cinzel Decorative',serif;
+  font-size:1.1rem;
+  color:var(--gold);
+  letter-spacing:.05em;
+  display:flex;align-items:center;gap:.5rem;
+}
+.logo-rune{color:var(--blood-hi);font-size:1rem}
+
+.header-sep{flex:1}
+
+.hbtn{
+  font-family:'Cinzel',serif;
+  font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:.35rem .7rem;
+  border:1px solid var(--border-hi);
+  border-radius:var(--radius);
+  background:transparent;
+  color:var(--text-dim);
+  cursor:pointer;transition:all .18s;
+}
+.hbtn:hover{border-color:var(--gold-dim);color:var(--gold)}
+.hbtn.primary{background:var(--gold-dim);border-color:var(--gold-dim);color:var(--bg)}
+.hbtn.primary:hover{background:var(--gold);border-color:var(--gold)}
+
+/* ═══════════════════════════════════════
+   VIEWS
+   ═══════════════════════════════════════ */
+#list-view,#sheet-view{position:relative;z-index:1}
+#sheet-view{display:none}
+
+/* ═══════════════════════════════════════
+   CHARACTER LIST
+   ═══════════════════════════════════════ */
+.list-wrap{max-width:960px;margin:0 auto;padding:2rem 1.5rem}
+
+.list-heading{
+  font-family:'Cinzel Decorative',serif;
+  font-size:1.3rem;
+  color:var(--gold);
+  text-align:center;
+  margin-bottom:1.5rem;
+}
+.list-heading::before,.list-heading::after{content:' ✦ ';color:var(--blood-hi);opacity:.6;font-size:.9rem}
+
+.char-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:1rem;
+}
+
+.char-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1rem;
+  cursor:pointer;
+  transition:border-color .2s,transform .2s;
+  position:relative;overflow:hidden;
+}
+.char-card:hover{border-color:var(--gold-dim);transform:translateY(-2px)}
+.char-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);
+  opacity:0;transition:opacity .2s;
+}
+.char-card:hover::after{opacity:1}
+
+.cc-portrait{
+  width:48px;height:48px;border-radius:50%;
+  border:1px solid var(--border-hi);
+  background:var(--raised);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;overflow:hidden;margin-bottom:.75rem;
+}
+.cc-portrait img{width:100%;height:100%;object-fit:cover}
+
+.cc-name{font-family:'Cinzel',serif;font-size:.95rem;color:var(--text-hi);margin-bottom:.2rem}
+.cc-meta{font-size:.8rem;color:var(--text-dim);font-style:italic;margin-bottom:.6rem}
+
+.cc-hpbar{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem}
+.cc-hpbar-track{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.cc-hpbar-fill{height:100%;border-radius:2px;transition:width .4s}
+.cc-hpbar-label{font-family:'Cinzel',serif;font-size:.6rem;color:var(--text-dim)}
+
+.cc-actions{display:flex;gap:.35rem;margin-top:.5rem}
+
+.new-card{
+  border:1px dashed var(--border-hi);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.4rem;min-height:150px;color:var(--text-dim);
+  font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;
+  transition:all .2s;
+}
+.new-card:hover{border-color:var(--gold-dim);color:var(--gold);background:rgba(200,168,75,.03)}
+.new-card-plus{font-size:1.8rem;color:var(--gold-dim);line-height:1}
+
+/* ═══════════════════════════════════════
+   SHEET LAYOUT
+   ═══════════════════════════════════════ */
+.sheet-grid{
+  display:grid;
+  grid-template-columns:260px 1fr 280px;
+  min-height:calc(100vh - 52px);
+}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:.875rem;
+  overflow-y:auto;
+  display:flex;flex-direction:column;gap:.75rem;
+}
+
+/* Portrait */
+.portrait-wrap{
+  position:relative;
+  aspect-ratio:1;
+  border:1px solid var(--border-hi);
+  border-radius:var(--radius);
+  background:var(--raised);
+  cursor:pointer;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.portrait-wrap img{width:100%;height:100%;object-fit:cover}
+.portrait-ph{display:flex;flex-direction:column;align-items:center;gap:.4rem;color:var(--text-dim);font-size:.75rem;text-align:center;padding:.5rem}
+.portrait-ph-icon{font-size:2.5rem;opacity:.3}
+.portrait-hover{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:.7rem;color:white;font-family:'Cinzel',serif;letter-spacing:.1em}
+.portrait-wrap:hover .portrait-hover{opacity:1}
+
+/* Identity */
+.id-panel{background:var(--raised);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem}
+.id-name{
+  font-family:'Cinzel',serif;font-size:1rem;font-weight:600;
+  color:var(--gold-pale);background:transparent;border:none;
+  border-bottom:1px solid var(--border);width:100%;
+  padding:.2rem 0;margin-bottom:.5rem;text-align:center;
+}
+.id-name:focus{outline:none;border-color:var(--gold-dim)}
+.id-grid{display:grid;grid-template-columns:1fr 1fr;gap:.35rem}
+.id-field{display:flex;flex-direction:column;gap:2px}
+.id-lbl{font-family:'Cinzel',serif;font-size:.55rem;color:var(--gold-dim);letter-spacing:.1em;text-transform:uppercase}
+.id-val{font-size:.82rem;background:transparent;border:none;border-bottom:1px solid rgba(46,37,24,.6);color:var(--text);padding:2px 0;width:100%}
+.id-val:focus{outline:none;border-color:var(--gold-dim)}
+
+/* Attributes */
+.attr-header{font-family:'Cinzel',serif;font-size:.6rem;color:var(--gold);letter-spacing:.15em;text-align:center;text-transform:uppercase;margin-bottom:.3rem}
+
+.attrs-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.attr-box{
+  background:var(--raised);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.45rem;text-align:center;
+  transition:border-color .15s;
+}
+.attr-box:hover{border-color:var(--border-hi)}
+.attr-lbl{font-family:'Cinzel',serif;font-size:.5rem;color:var(--gold-dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1px}
+.attr-mod{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:700;color:var(--gold-pale);line-height:1.1}
+.attr-row{display:flex;align-items:center;justify-content:center;gap:3px;margin:2px 0}
+.attr-btn{
+  width:15px;height:15px;border-radius:50%;border:1px solid var(--border);
+  background:transparent;color:var(--gold-dim);font-size:.65rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  padding:0;line-height:1;transition:all .12s;
+}
+.attr-btn:hover{border-color:var(--gold);color:var(--gold)}
+.attr-num{
+  font-family:'Cinzel',serif;font-size:.82rem;font-weight:600;
+  color:var(--text);background:transparent;border:none;
+  width:26px;text-align:center;
+}
+.attr-num:focus{outline:none;color:var(--gold)}
+
+.attr-st{display:flex;align-items:center;justify-content:center;gap:3px;font-size:.58rem;color:var(--text-dim)}
+.pdot{
+  width:6px;height:6px;border-radius:50%;
+  border:1px solid var(--gold-dim);cursor:pointer;transition:all .15s;flex-shrink:0;
+}
+.pdot.on{background:var(--gold);border-color:var(--gold)}
+
+/* Point Buy */
+.pb-banner{
+  background:var(--raised);border:1px solid var(--border-hi);
+  border-radius:var(--radius);padding:.5rem .75rem;
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:.8rem;
+}
+.pb-points{font-family:'Cinzel',serif;font-size:1rem;font-weight:700;color:var(--gold)}
+.pb-label{font-family:'Cinzel',serif;font-size:.6rem;color:var(--text-dim);letter-spacing:.1em}
+
+/* ── MAIN PANEL ── */
+.main-panel{
+  padding:.875rem;overflow-y:auto;
+  display:flex;flex-direction:column;gap:.875rem;
+}
+
+/* HP */
+.hp-card{
+  background:var(--surface);border:1px solid rgba(139,26,26,.4);
+  border-radius:var(--radius);padding:.875rem;
+}
+.hp-card-title{
+  font-family:'Cinzel',serif;font-size:.6rem;color:var(--blood-hi);
+  letter-spacing:.15em;text-transform:uppercase;
+  display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;
+}
+.hp-card-title::before,.hp-card-title::after{content:'';flex:1;height:1px;background:rgba(139,26,26,.3)}
+
+.hp-track{position:relative;height:20px;background:rgba(0,0,0,.4);border-radius:10px;overflow:hidden;margin-bottom:.75rem;border:1px solid rgba(100,0,0,.3)}
+.hp-fill{height:100%;border-radius:10px;transition:width .4s,background-color .4s}
+.hp-fill::after{content:'';position:absolute;top:2px;left:5px;right:5px;height:3px;background:rgba(255,255,255,.1);border-radius:2px}
+.hp-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;color:white;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+
+.hp-nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.6rem}
+.hp-fld{text-align:center}
+.hp-fld-lbl{font-family:'Cinzel',serif;font-size:.55rem;color:var(--blood-hi);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+.hp-fld-val{display:flex;align-items:center;justify-content:center;gap:3px}
+.hp-nbtn{
+  width:18px;height:18px;border:1px solid rgba(100,0,0,.4);
+  border-radius:50%;background:rgba(139,26,26,.15);
+  color:var(--blood-hi);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;padding:0;line-height:1;transition:all .12s;
+}
+.hp-nbtn:hover{background:rgba(139,26,26,.35);border-color:var(--blood-hi)}
+.hp-ninput{
+  font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;
+  color:white;background:transparent;border:none;width:46px;text-align:center;
+}
+.hp-ninput:focus{outline:none;color:var(--blood-hi)}
+
+.hp-actions{display:flex;gap:.4rem;align-items:center}
+.hp-action-input{
+  flex:1;background:rgba(0,0,0,.25);border:1px solid rgba(100,0,0,.3);
+  border-radius:var(--radius);color:white;padding:.35rem .5rem;
+  font-size:.9rem;text-align:center;
+}
+.hp-action-input:focus{outline:none;border-color:var(--blood)}
+.btn-dmg{background:rgba(139,26,26,.25);border:1px solid var(--blood);color:#ff8888;font-family:'Cinzel',serif;font-size:.6rem;padding:.35rem .55rem;border-radius:var(--radius);cursor:pointer;transition:all .15s;letter-spacing:.05em}
+.btn-dmg:hover{background:rgba(139,26,26,.45)}
+.btn-heal{background:rgba(45,110,78,.2);border:1px solid #1a5e3a;color:#7bffb0;font-family:'Cinzel',serif;font-size:.6rem;padding:.35rem .55rem;border-radius:var(--radius);cursor:pointer;transition:all .15s;letter-spacing:.05em}
+.btn-heal:hover{background:rgba(45,110,78,.35)}
+.btn-tmp{background:rgba(60,100,180,.15);border:1px solid #1a356b;color:#88aaff;font-family:'Cinzel',serif;font-size:.6rem;padding:.35rem .55rem;border-radius:var(--radius);cursor:pointer;transition:all .15s;letter-spacing:.05em}
+.btn-tmp:hover{background:rgba(60,100,180,.25)}
+
+.hp-status{
+  font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.15em;
+  text-align:center;padding:.2rem;border-radius:var(--radius);margin-top:.4rem;
+}
+
+/* Combat Row */
+.combat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem}
+.combat-stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.5rem;text-align:center;
+}
+.cs-lbl{font-family:'Cinzel',serif;font-size:.5rem;color:var(--gold-dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.cs-val{display:flex;align-items:center;justify-content:center;gap:3px}
+.cs-num{font-family:'Cinzel',serif;font-size:1.2rem;font-weight:700;color:var(--gold-pale)}
+.cs-ninput{font-family:'Cinzel',serif;font-size:1.2rem;font-weight:700;color:var(--gold-pale);background:transparent;border:none;width:42px;text-align:center}
+.cs-ninput:focus{outline:none;color:var(--gold)}
+.cs-btn{width:16px;height:16px;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--gold-dim);font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;transition:all .12s}
+.cs-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Tabs */
+.tabs-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;flex:1}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);overflow-x:auto}
+.tab-btn{
+  font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-dim);background:transparent;border:none;
+  border-bottom:2px solid transparent;
+  padding:.55rem .9rem;cursor:pointer;white-space:nowrap;
+  transition:all .15s;
+}
+.tab-btn:hover{color:var(--text-hi)}
+.tab-btn.on{color:var(--gold);border-bottom-color:var(--gold)}
+.tab-body{padding:.75rem}
+.tab-pane{display:none}
+.tab-pane.on{display:block}
+
+/* Section header inside tab */
+.sec-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.5rem;
+}
+.sec-title{font-family:'Cinzel',serif;font-size:.6rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;padding-bottom:.3rem;border-bottom:1px solid var(--border)}
+.add-btn{
+  width:22px;height:22px;border:1px solid var(--gold-dim);border-radius:50%;
+  background:transparent;color:var(--gold);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;line-height:1;padding:0;transition:all .15s;
+}
+.add-btn:hover{background:rgba(200,168,75,.1)}
+
+/* Quick-add bar */
+.quick-add{
+  display:flex;gap:.35rem;align-items:center;margin-bottom:.6rem;
+}
+.quick-input{
+  flex:1;background:rgba(0,0,0,.2);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text);padding:.3rem .5rem;
+  font-size:.85rem;
+}
+.quick-input:focus{outline:none;border-color:var(--gold-dim)}
+.quick-input::placeholder{color:var(--text-dim)}
+.quick-btn{
+  font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.08em;
+  padding:.3rem .6rem;border:1px solid var(--border-hi);border-radius:var(--radius);
+  background:transparent;color:var(--text-dim);cursor:pointer;white-space:nowrap;
+  transition:all .15s;
+}
+.quick-btn:hover{border-color:var(--gold-dim);color:var(--gold)}
+
+/* Search dropdown */
+.search-wrap{position:relative;margin-bottom:.5rem}
+.search-input{
+  width:100%;background:rgba(0,0,0,.25);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text);padding:.35rem .5rem;
+  font-size:.85rem;
+}
+.search-input:focus{outline:none;border-color:var(--gold-dim)}
+.search-dropdown{
+  position:absolute;top:100%;left:0;right:0;z-index:50;
+  background:var(--raised);border:1px solid var(--border-hi);
+  border-radius:var(--radius);max-height:200px;overflow-y:auto;
+  display:none;box-shadow:var(--shadow);
+}
+.search-dropdown.open{display:block}
+.search-item{
+  padding:.35rem .6rem;font-size:.82rem;cursor:pointer;
+  display:flex;align-items:center;gap:.5rem;transition:background .12s;
+}
+.search-item:hover{background:rgba(200,168,75,.07)}
+.search-item-badge{
+  font-family:'Cinzel',serif;font-size:.55rem;
+  background:var(--gold-dim);color:var(--bg);
+  padding:1px 5px;border-radius:8px;white-space:nowrap;
+}
+.search-item-name{flex:1}
+.search-item-sub{font-size:.7rem;color:var(--text-dim);font-style:italic}
+
+/* Skills grid */
+.skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:.2rem}
+.skill-row{display:flex;align-items:center;gap:5px;padding:2px 0}
+.skill-name{font-size:.78rem;color:var(--text);flex:1}
+.skill-bonus{font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;color:var(--gold-pale);min-width:22px;text-align:right}
+
+/* Spell list */
+.spell-slots-row{
+  display:grid;grid-template-columns:repeat(9,1fr);gap:.35rem;margin-bottom:.6rem;
+}
+.slot-cell{
+  background:var(--raised);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.35rem .15rem;text-align:center;
+}
+.slot-lv{font-family:'Cinzel',serif;font-size:.55rem;color:var(--gold-dim);letter-spacing:.05em}
+.slot-pips{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;margin-top:3px}
+.slot-pip{width:7px;height:7px;border-radius:50%;border:1px solid var(--border-hi);cursor:pointer;transition:all .12s}
+.slot-pip.avail{background:var(--gold-dim);border-color:var(--gold)}
+.slot-pip.used{background:rgba(255,255,255,.04)}
+
+.spell-list{display:flex;flex-direction:column;gap:.3rem}
+.spell-item{
+  display:flex;align-items:center;gap:.45rem;
+  padding:.35rem .55rem;
+  background:rgba(0,0,0,.15);border:1px solid rgba(46,37,24,.5);
+  border-radius:var(--radius);font-size:.82rem;
+}
+.spell-badge{font-family:'Cinzel',serif;font-size:.55rem;background:var(--gold-dim);color:var(--bg);padding:1px 5px;border-radius:8px;white-space:nowrap}
+.spell-name-txt{flex:1;color:var(--text)}
+.spell-school-txt{font-size:.65rem;color:var(--text-dim);font-style:italic}
+
+/* Inventory */
+.inv-list{display:flex;flex-direction:column;gap:.25rem}
+.inv-item{
+  display:flex;align-items:center;gap:.45rem;
+  padding:.35rem .55rem;
+  background:rgba(0,0,0,.15);border:1px solid rgba(46,37,24,.4);
+  border-radius:var(--radius);font-size:.82rem;
+}
+.inv-qty{font-family:'Cinzel',serif;font-size:.68rem;color:var(--gold);min-width:22px;text-align:center}
+.inv-name{flex:1;color:var(--text)}
+.inv-wt{font-size:.65rem;color:var(--text-dim)}
+
+/* Currency */
+.coin-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;margin-bottom:.75rem}
+.coin-fld{text-align:center}
+.coin-lbl{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+.coin-lbl.pp{color:#aaa}
+.coin-lbl.gp{color:var(--gold)}
+.coin-lbl.ep{color:#8db88d}
+.coin-lbl.sp{color:#c0c0c0}
+.coin-lbl.cp{color:#c68642}
+.coin-input{width:100%;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:.3rem;text-align:center;font-family:'Cinzel',serif;font-size:.85rem}
+.coin-input:focus{outline:none;border-color:var(--gold-dim)}
+
+/* Feats */
+.feat-item{
+  padding:.45rem .6rem;background:rgba(0,0,0,.15);
+  border:1px solid rgba(46,37,24,.4);border-radius:var(--radius);
+  margin-bottom:.3rem;display:flex;align-items:flex-start;gap:.4rem;
+}
+.feat-name{font-family:'Cinzel',serif;font-size:.68rem;color:var(--gold-pale)}
+.feat-desc{font-size:.75rem;color:var(--text-dim);font-style:italic;margin-top:1px}
+
+/* Tags */
+.tag-area{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.25rem}
+.rtag{display:inline-flex;align-items:center;gap:3px;padding:.2rem .45rem;border:1px solid;border-radius:2px;font-family:'Cinzel',serif;font-size:.6rem;cursor:pointer}
+.rtag.resist{border-color:#1a3a5a;color:#7ab5ff;background:rgba(100,170,255,.06)}
+.rtag.immune{border-color:#1a5a3a;color:#7affb0;background:rgba(100,255,170,.06)}
+.rtag.vuln{border-color:#5a1a1a;color:#ff8888;background:rgba(255,100,100,.06)}
+.lang-tag{display:inline-flex;align-items:center;gap:3px;padding:.2rem .45rem;border:1px solid var(--border);border-radius:10px;font-size:.65rem;color:var(--text-dim)}
+
+/* Textarea */
+.sh-textarea{
+  width:100%;background:rgba(0,0,0,.15);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text);padding:.5rem;
+  font-family:'Crimson Pro',Georgia,serif;font-size:.9rem;line-height:1.6;
+  resize:vertical;min-height:80px;
+}
+.sh-textarea:focus{outline:none;border-color:var(--gold-dim)}
+
+/* ── RIGHT PANEL ── */
+.right-panel{
+  background:var(--surface);border-left:1px solid var(--border);
+  padding:.875rem;overflow-y:auto;
+  display:flex;flex-direction:column;gap:.875rem;
+}
+
+.rp-section{}
+.rp-title{font-family:'Cinzel',serif;font-size:.58rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;padding-bottom:.3rem;border-bottom:1px solid var(--border);margin-bottom:.55rem}
+
+/* Inspiration */
+.insp-btn{
+  width:100%;padding:.5rem;border:1px solid var(--border-hi);border-radius:var(--radius);
+  background:transparent;color:var(--text-dim);font-family:'Cinzel',serif;
+  font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;
+  transition:all .2s;
+}
+.insp-btn.on{background:rgba(200,168,75,.12);border-color:var(--gold);color:var(--gold);box-shadow:0 0 12px rgba(200,168,75,.15)}
+
+/* Initiative / turn */
+.big-input-row{display:flex;align-items:center;gap:.5rem}
+.big-input{
+  font-family:'Cinzel',serif;font-size:1.8rem;font-weight:700;
+  color:var(--gold-pale);background:rgba(0,0,0,.2);
+  border:1px solid var(--border);border-radius:var(--radius);
+  flex:1;text-align:center;padding:.2rem;
+}
+.big-input:focus{outline:none;border-color:var(--gold-dim)}
+.big-num{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:700;color:var(--gold-pale);flex:1;text-align:center}
+
+/* Death saves */
+.dsave-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem}
+.dsave-lbl{font-family:'Cinzel',serif;font-size:.55rem;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;width:52px}
+.dsave-pip{width:13px;height:13px;border-radius:50%;border:1px solid;cursor:pointer;transition:all .15s}
+.dsave-pip.suc{border-color:#1a5a3a}
+.dsave-pip.suc.on{background:var(--hp-green);border-color:#2d6e4e;box-shadow:0 0 5px rgba(45,110,78,.5)}
+.dsave-pip.fail{border-color:#5a1a1a}
+.dsave-pip.fail.on{background:var(--hp-red);border-color:#8b1a1a;box-shadow:0 0 5px rgba(139,26,26,.5)}
+
+/* Conditions */
+.cond-grid{display:grid;grid-template-columns:1fr 1fr;gap:.25rem}
+.cond-tag{
+  padding:.25rem .35rem;border:1px solid var(--border);border-radius:2px;
+  font-family:'Cinzel',serif;font-size:.58rem;cursor:pointer;text-align:center;
+  color:var(--text-dim);transition:all .15s;letter-spacing:.03em;
+}
+.cond-tag.on{background:rgba(139,26,26,.25);border-color:var(--blood);color:#ff9999}
+.cond-tag:hover{border-color:var(--border-hi);color:var(--text)}
+
+/* Hit dice */
+.hd-row{display:flex;align-items:center;gap:.5rem}
+.hd-input{font-family:'Cinzel',serif;font-size:1rem;font-weight:700;color:var(--gold-pale);background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:var(--radius);width:40px;text-align:center;padding:.2rem}
+.hd-input:focus{outline:none;border-color:var(--gold-dim)}
+.hd-sep{color:var(--text-dim);font-size:.8rem}
+.hd-max{font-family:'Cinzel',serif;font-size:1rem;color:var(--gold-pale)}
+.hd-type{font-family:'Cinzel',serif;font-size:.85rem;color:var(--gold);background:transparent;border:none;border-bottom:1px solid var(--border);width:36px;text-align:center;padding:1px 0}
+.hd-type:focus{outline:none;border-color:var(--gold-dim)}
+
+/* Prof bonus */
+.pb-big{font-family:'Cinzel',serif;font-size:2rem;font-weight:700;color:var(--gold-pale);flex:1;text-align:center}
+
+/* Remove btn */
+.rm-btn{background:transparent;border:none;color:rgba(139,26,26,.5);cursor:pointer;font-size:.85rem;padding:0 2px;line-height:1;transition:color .12s}
+.rm-btn:hover{color:var(--blood-hi)}
+
+/* ══ DROP ZONE ══ */
+.drop-zone{
+  border:1px dashed var(--border-hi);border-radius:var(--radius);
+  padding:1rem;text-align:center;cursor:pointer;transition:all .15s;
+  font-size:.75rem;color:var(--text-dim);
+}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--gold-dim);color:var(--gold);background:rgba(200,168,75,.03)}
+.extra-thumbs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem}
+
+/* ══ HOMEBREW MANAGER ══ */
+.hb-section{background:var(--raised);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;margin-bottom:.5rem}
+.hb-title{font-family:'Cinzel',serif;font-size:.65rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem}
+.hb-tabs{display:flex;gap:.25rem;margin-bottom:.6rem}
+.hb-tab{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.08em;padding:.25rem .5rem;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text-dim);cursor:pointer;transition:all .12s;text-transform:uppercase}
+.hb-tab.on{border-color:var(--gold-dim);color:var(--gold);background:rgba(200,168,75,.06)}
+.hb-pane{display:none}
+.hb-pane.on{display:block}
+.hb-item{display:flex;align-items:center;gap:.4rem;padding:.25rem 0;border-bottom:1px solid rgba(46,37,24,.3);font-size:.8rem}
+.hb-item:last-child{border:none}
+.hb-item-name{flex:1;color:var(--text)}
+.hb-item-sub{font-size:.7rem;color:var(--text-dim);font-style:italic}
+
+/* ══ MODALS ══ */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;
+  display:none;align-items:center;justify-content:center;padding:1rem;
+}
+.modal-bg.open{display:flex}
+.modal{
+  background:var(--surface);border:1px solid var(--border-hi);
+  border-radius:var(--radius);width:90%;max-width:480px;max-height:85vh;
+  overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.8);
+}
+.modal-head{
+  padding:.875rem 1rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-family:'Cinzel Decorative',serif;font-size:.9rem;color:var(--gold)}
+.modal-body{padding:1rem}
+.modal-foot{padding:.75rem 1rem;border-top:1px solid var(--border);display:flex;gap:.4rem;justify-content:flex-end}
+
+.fg{margin-bottom:.75rem}
+.fl{display:block;font-family:'Cinzel',serif;font-size:.6rem;color:var(--gold-dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.25rem}
+.fi,.fs,.ft{
+  width:100%;background:rgba(0,0,0,.25);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text);padding:.4rem .6rem;
+  font-family:'Crimson Pro',Georgia,serif;font-size:.9rem;
+}
+.fi:focus,.fs:focus,.ft:focus{outline:none;border-color:var(--gold-dim)}
+.fs option{background:var(--surface)}
+.ft{min-height:70px;resize:vertical;line-height:1.5}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+
+/* ══ TOAST ══ */
+.toast-wrap{position:fixed;bottom:1.25rem;right:1.25rem;z-index:9999;display:flex;flex-direction:column;gap:.35rem}
+.toast{
+  background:var(--raised);border:1px solid var(--border);border-radius:var(--radius);
+  padding:.6rem .875rem;min-width:180px;max-width:300px;
+  display:flex;align-items:center;gap:.5rem;font-size:.82rem;
+  animation:toastIn .25s ease;box-shadow:var(--shadow);
+}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastOut{to{transform:translateX(110%);opacity:0}}
+.toast.success{border-color:#1a5a3a}
+.toast.success .ti{color:#7bffb0}
+.toast.error{border-color:#5a1a1a}
+.toast.error .ti{color:#ff8888}
+.toast.info{border-color:var(--gold-dim)}
+.toast.info .ti{color:var(--gold)}
+
+/* ══ UNDO BAR ══ */
+.undo-bar{
+  position:fixed;bottom:4rem;left:50%;transform:translateX(-50%);
+  background:var(--raised);border:1px solid var(--border-hi);
+  border-radius:20px;padding:.4rem .875rem;
+  display:flex;align-items:center;gap:.6rem;font-size:.78rem;
+  z-index:900;opacity:0;pointer-events:none;transition:opacity .2s;
+  white-space:nowrap;
+}
+.undo-bar.show{opacity:1;pointer-events:all}
+.undo-bar button{background:transparent;border:none;color:var(--gold);cursor:pointer;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.08em}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:1100px){.sheet-grid{grid-template-columns:240px 1fr 260px}}
+@media(max-width:900px){.sheet-grid{grid-template-columns:1fr}.sidebar,.right-panel{border:none;border-bottom:1px solid var(--border)}.combat-row{grid-template-columns:repeat(2,1fr)}.skills-grid{grid-template-columns:1fr}.spell-slots-row{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:600px){.char-grid{grid-template-columns:1fr}.coin-grid{grid-template-columns:repeat(3,1fr)}.hp-nums{grid-template-columns:1fr 1fr}.combat-row{grid-template-columns:repeat(2,1fr)}}
+
+/* Bump animation */
+@keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.07);border-color:var(--gold)}100%{transform:scale(1)}}
+.bump{animation:bump .25s ease}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="logo"><span class="logo-rune">⚔</span> <span class="font-title">Grimório</span></div>
+  <div class="header-sep"></div>
+  <div id="list-hdr">
+    <button class="hbtn" onclick="openHomebrewManager()">⚗ Homebrew</button>
+    <button class="hbtn" onclick="importZip()">📥 ZIP</button>
+    <button class="hbtn" onclick="importJSON()">📄 JSON</button>
+    <button class="hbtn primary" onclick="openNewCharModal()">+ Personagem</button>
+  </div>
+  <div id="sheet-hdr" style="display:none;display:flex;gap:.35rem;align-items:center">
+    <button class="hbtn" onclick="goBack()">← Lista</button>
+    <button class="hbtn" onclick="saveManual()">💾</button>
+    <button class="hbtn" onclick="exportJSON()">JSON</button>
+    <button class="hbtn primary" onclick="exportZIP()">📦 ZIP</button>
+  </div>
+</header>
+
+<!-- LIST VIEW -->
+<div id="list-view">
+  <div class="list-wrap">
+    <div class="list-heading">Seus Aventureiros</div>
+    <div class="char-grid" id="char-grid"></div>
+  </div>
+</div>
+
+<!-- SHEET VIEW -->
+<div id="sheet-view">
+  <div class="sheet-grid">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="portrait-wrap" onclick="triggerPortraitUpload()" id="portrait-wrap">
+        <img id="portrait-img" src="" style="display:none">
+        <div class="portrait-ph" id="portrait-ph"><div class="portrait-ph-icon">🧙</div><div>Retrato</div></div>
+        <div class="portrait-hover">Trocar</div>
+      </div>
+      <input type="file" id="portrait-input" accept="image/*" style="display:none" onchange="loadPortrait(event)">
+
+      <div class="id-panel">
+        <input type="text" class="id-name" id="char-name" placeholder="Nome do Personagem" oninput="sf('name',this.value)">
+        <div class="id-grid">
+          <div class="id-field"><div class="id-lbl">Raça</div><input class="id-val" id="char-race" placeholder="Humano" oninput="sf('race',this.value)" list="dl-races"></div>
+          <div class="id-field"><div class="id-lbl">Classe</div><input class="id-val" id="char-class" placeholder="Guerreiro" oninput="sf('class',this.value)" list="dl-classes"></div>
+          <div class="id-field"><div class="id-lbl">Subclasse</div><input class="id-val" id="char-subclass" oninput="sf('subclass',this.value)"></div>
+          <div class="id-field"><div class="id-lbl">Background</div><input class="id-val" id="char-background" oninput="sf('background',this.value)"></div>
+          <div class="id-field"><div class="id-lbl">Alinhamento</div><input class="id-val" id="char-alignment" oninput="sf('alignment',this.value)"></div>
+          <div class="id-field"><div class="id-lbl">Nível</div><input type="number" class="id-val" id="char-level" min="1" max="20" value="1" onchange="sf('level',+this.value);recalc()"></div>
+          <div class="id-field"><div class="id-lbl">XP</div><input type="number" class="id-val" id="char-xp" value="0" onchange="sf('xp',+this.value)"></div>
+          <div class="id-field"><div class="id-lbl">Idade</div><input class="id-val" id="char-age" oninput="sf('age',this.value)"></div>
+        </div>
+      </div>
+
+      <!-- Datalists for autocomplete -->
+      <datalist id="dl-races"></datalist>
+      <datalist id="dl-classes"></datalist>
+
+      <!-- Point Buy toggle -->
+      <div id="pb-banner" class="pb-banner" style="display:none">
+        <div>
+          <div class="pb-label">Point Buy</div>
+          <div class="pb-points" id="pb-pts">27</div>
+        </div>
+        <button class="hbtn" onclick="togglePointBuy()">Fechar</button>
+      </div>
+      <button class="hbtn" id="pb-toggle-btn" onclick="togglePointBuy()" style="font-size:.6rem;padding:.3rem .6rem;margin-top:-.2rem">⚖ Point Buy</button>
+
+      <div class="attr-header">Atributos</div>
+      <div class="attrs-grid" id="attrs-grid"></div>
+
+      <!-- Saving Throws -->
+      <div style="background:var(--raised);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem">
+        <div class="rp-title">Saving Throws</div>
+        <div id="st-list"></div>
+      </div>
+    </aside>
+
+    <!-- MAIN PANEL -->
+    <main class="main-panel">
+
+      <!-- HP -->
+      <div class="hp-card">
+        <div class="hp-card-title">Pontos de Vida</div>
+        <div class="hp-track">
+          <div class="hp-fill" id="hp-fill" style="width:100%"></div>
+          <div class="hp-label" id="hp-label">10 / 10</div>
+        </div>
+        <div class="hp-nums">
+          <div class="hp-fld">
+            <div class="hp-fld-lbl">Atual</div>
+            <div class="hp-fld-val">
+              <button class="hp-nbtn" onclick="adjHP(-1)">−</button>
+              <input type="number" class="hp-ninput" id="hp-cur" value="10" onchange="updateHP()">
+              <button class="hp-nbtn" onclick="adjHP(1)">+</button>
+            </div>
+          </div>
+          <div class="hp-fld">
+            <div class="hp-fld-lbl">Máximo</div>
+            <div class="hp-fld-val">
+              <button class="hp-nbtn" onclick="adjMaxHP(-1)">−</button>
+              <input type="number" class="hp-ninput" id="hp-max" value="10" onchange="updateHP()">
+              <button class="hp-nbtn" onclick="adjMaxHP(1)">+</button>
+            </div>
+          </div>
+          <div class="hp-fld">
+            <div class="hp-fld-lbl">Temporário</div>
+            <div class="hp-fld-val">
+              <button class="hp-nbtn" onclick="adjTmpHP(-1)">−</button>
+              <input type="number" class="hp-ninput" id="hp-tmp" value="0" onchange="updateHP()">
+              <button class="hp-nbtn" onclick="adjTmpHP(1)">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="hp-actions">
+          <input type="number" class="hp-action-input" id="hp-val" placeholder="Valor..." min="0">
+          <button class="btn-dmg" onclick="applyDmg()">⚔ Dano</button>
+          <button class="btn-heal" onclick="applyHeal()">✦ Curar</button>
+          <button class="btn-tmp" onclick="applyTmp()">🛡 Temp</button>
+        </div>
+        <div class="hp-status" id="hp-status">✦ SAUDÁVEL ✦</div>
+      </div>
+
+      <!-- Combat Row -->
+      <div class="combat-row" id="combat-row"></div>
+
+      <!-- Tabs -->
+      <div class="tabs-card">
+        <div class="tab-bar">
+          <button class="tab-btn on" onclick="switchTab('skills',this)">Perícias</button>
+          <button class="tab-btn" onclick="switchTab('spells',this)">Magias</button>
+          <button class="tab-btn" onclick="switchTab('inv',this)">Inventário</button>
+          <button class="tab-btn" onclick="switchTab('feats',this)">Talentos</button>
+          <button class="tab-btn" onclick="switchTab('bg',this)">História</button>
+          <button class="tab-btn" onclick="switchTab('notes',this)">Notas</button>
+        </div>
+        <div class="tab-body">
+
+          <!-- SKILLS -->
+          <div class="tab-pane on" id="tab-skills">
+            <div class="skills-grid" id="skills-grid"></div>
+          </div>
+
+          <!-- SPELLS -->
+          <div class="tab-pane" id="tab-spells">
+            <div style="margin-bottom:.6rem">
+              <div class="sec-title" style="margin-bottom:.5rem">Espaços de Magia</div>
+              <div class="spell-slots-row" id="spell-slots"></div>
+            </div>
+            <div class="sec-head">
+              <div class="sec-title">Magias</div>
+              <button class="add-btn" onclick="openAddSpellModal()">+</button>
+            </div>
+            <!-- Quick search from SRD library -->
+            <div class="search-wrap" id="spell-search-wrap">
+              <input class="search-input" id="spell-search" placeholder="🔍 Buscar magia (SRD + homebrew)..." oninput="searchSpells(this.value)">
+              <div class="search-dropdown" id="spell-dropdown"></div>
+            </div>
+            <div class="spell-list" id="spell-list"></div>
+          </div>
+
+          <!-- INVENTORY -->
+          <div class="tab-pane" id="tab-inv">
+            <div style="margin-bottom:.75rem">
+              <div class="sec-title" style="margin-bottom:.5rem">Moedas</div>
+              <div class="coin-grid">
+                <div class="coin-fld"><div class="coin-lbl pp">PP</div><input type="number" class="coin-input" id="coin-pp" value="0" onchange="sf('coins.pp',+this.value)"></div>
+                <div class="coin-fld"><div class="coin-lbl gp">PO</div><input type="number" class="coin-input" id="coin-gp" value="0" onchange="sf('coins.gp',+this.value)"></div>
+                <div class="coin-fld"><div class="coin-lbl ep">PE</div><input type="number" class="coin-input" id="coin-ep" value="0" onchange="sf('coins.ep',+this.value)"></div>
+                <div class="coin-fld"><div class="coin-lbl sp">PP</div><input type="number" class="coin-input" id="coin-sp" value="0" onchange="sf('coins.sp',+this.value)"></div>
+                <div class="coin-fld"><div class="coin-lbl cp">PC</div><input type="number" class="coin-input" id="coin-cp" value="0" onchange="sf('coins.cp',+this.value)"></div>
+              </div>
+            </div>
+            <div class="sec-head">
+              <div class="sec-title">Itens</div>
+              <button class="add-btn" onclick="openAddItemModal()">+</button>
+            </div>
+            <!-- Quick item search -->
+            <div class="search-wrap">
+              <input class="search-input" id="item-search" placeholder="🔍 Buscar item (SRD + homebrew)..." oninput="searchItems(this.value)">
+              <div class="search-dropdown" id="item-dropdown"></div>
+            </div>
+            <div class="inv-list" id="inv-list"></div>
+            <div style="margin-top:.75rem">
+              <div class="sec-title" style="margin-bottom:.4rem">Equipamento</div>
+              <textarea class="sh-textarea" id="equip-txt" style="min-height:55px" onchange="sf('equipment',this.value)"></textarea>
+            </div>
+          </div>
+
+          <!-- FEATS -->
+          <div class="tab-pane" id="tab-feats">
+            <div class="sec-head" style="margin-bottom:.5rem">
+              <div class="sec-title">Talentos & Habilidades</div>
+              <button class="add-btn" onclick="openAddFeatModal()">+</button>
+            </div>
+            <div id="feats-list"></div>
+            <div style="margin-top:.75rem">
+              <div class="sec-head">
+                <div class="sec-title">Resistências</div>
+                <button class="add-btn" onclick="addResistance()">+</button>
+              </div>
+              <div class="tag-area" id="resist-area"></div>
+            </div>
+            <div style="margin-top:.75rem">
+              <div class="sec-head">
+                <div class="sec-title">Idiomas</div>
+                <button class="add-btn" onclick="addLanguage()">+</button>
+              </div>
+              <div class="tag-area" id="lang-area"></div>
+            </div>
+            <div style="margin-top:.75rem">
+              <div class="sec-head">
+                <div class="sec-title">Proficiências</div>
+                <button class="add-btn" onclick="addProficiency()">+</button>
+              </div>
+              <div id="prof-list" style="margin-top:.3rem"></div>
+            </div>
+          </div>
+
+          <!-- BACKGROUND -->
+          <div class="tab-pane" id="tab-bg">
+            <div class="fg"><label class="fl">Personalidade</label><textarea class="sh-textarea" id="bg-personality" onchange="sf('personality',this.value)"></textarea></div>
+            <div class="fg"><label class="fl">Ideais</label><textarea class="sh-textarea" id="bg-ideals" style="min-height:55px" onchange="sf('ideals',this.value)"></textarea></div>
+            <div class="fg"><label class="fl">Vínculos</label><textarea class="sh-textarea" id="bg-bonds" style="min-height:55px" onchange="sf('bonds',this.value)"></textarea></div>
+            <div class="fg"><label class="fl">Fraquezas</label><textarea class="sh-textarea" id="bg-flaws" style="min-height:55px" onchange="sf('flaws',this.value)"></textarea></div>
+            <div class="fg"><label class="fl">História</label><textarea class="sh-textarea" id="bg-backstory" style="min-height:110px" onchange="sf('backstory',this.value)"></textarea></div>
+          </div>
+
+          <!-- NOTES -->
+          <div class="tab-pane" id="tab-notes">
+            <textarea class="sh-textarea" id="notes-txt" style="min-height:280px" onchange="sf('notes',this.value)" placeholder="Anotações livres, missões, NPCs, segredos..."></textarea>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT PANEL -->
+    <aside class="right-panel">
+      <div class="rp-section">
+        <div class="rp-title">Inspiração</div>
+        <button class="insp-btn" id="insp-btn" onclick="toggleInsp()">✦ SEM INSPIRAÇÃO</button>
+      </div>
+      <div class="rp-section">
+        <div class="rp-title">Iniciativa</div>
+        <div class="big-input-row">
+          <button class="cs-btn" onclick="adjField('initiative',-1);updInit()">−</button>
+          <input type="number" class="big-input" id="init-display" value="0" onchange="sf('initiative',+this.value)">
+          <button class="cs-btn" onclick="adjField('initiative',1);updInit()">+</button>
+        </div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-title">Turnos</div>
+        <div class="big-input-row">
+          <button class="cs-btn" onclick="adjTurn(-1)">−</button>
+          <div class="big-num" id="turn-num">1</div>
+          <button class="cs-btn" onclick="adjTurn(1)">+</button>
+          <button class="hbtn" onclick="resetTurn()" style="font-size:.6rem">↺</button>
+        </div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-title">Death Saves</div>
+        <div class="dsave-row">
+          <div class="dsave-lbl">Sucesso</div>
+          <div class="dsave-pip suc" data-t="success" data-i="0" onclick="togDS(this)"></div>
+          <div class="dsave-pip suc" data-t="success" data-i="1" onclick="togDS(this)"></div>
+          <div class="dsave-pip suc" data-t="success" data-i="2" onclick="togDS(this)"></div>
+        </div>
+        <div class="dsave-row">
+          <div class="dsave-lbl">Falha</div>
+          <div class="dsave-pip fail" data-t="failure" data-i="0" onclick="togDS(this)"></div>
+          <div class="dsave-pip fail" data-t="failure" data-i="1" onclick="togDS(this)"></div>
+          <div class="dsave-pip fail" data-t="failure" data-i="2" onclick="togDS(this)"></div>
+        </div>
+        <button class="hbtn" onclick="resetDS()" style="margin-top:.4rem;width:100%;font-size:.6rem">↺ Resetar</button>
+      </div>
+      <div class="rp-section">
+        <div class="rp-title">Condições</div>
+        <div class="cond-grid" id="cond-grid"></div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-title">Dados de Vida</div>
+        <div class="hd-row">
+          <button class="cs-btn" onclick="adjHD(-1)">−</button>
+          <input type="number" class="hd-input" id="hd-used" value="0" onchange="sf('hitDiceUsed',+this.value)">
+          <span class="hd-sep">/</span>
+          <span class="hd-max" id="hd-max">1</span>
+          <input class="hd-type" id="hd-type" value="d8" onchange="sf('hitDiceType',this.value)">
+        </div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-title">Bônus de Proficiência</div>
+        <div class="big-input-row">
+          <button class="cs-btn" onclick="adjField('profBonus',-1);refreshProf()">−</button>
+          <div class="pb-big" id="pb-display">+2</div>
+          <button class="cs-btn" onclick="adjField('profBonus',1);refreshProf()">+</button>
+        </div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-title">Imagens Extras</div>
+        <div class="drop-zone" id="extra-drop" onclick="triggerExtra()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropExtra(event)">
+          <div style="font-size:1.3rem;margin-bottom:.2rem">🖼</div><div>Arrastar ou clicar</div>
+        </div>
+        <input type="file" id="extra-input" accept="image/*" multiple style="display:none" onchange="loadExtra(event)">
+        <div class="extra-thumbs" id="extra-thumbs"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- New Char -->
+<div class="modal-bg" id="m-newchar">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">✦ Novo Personagem</div>
+      <button class="hbtn" onclick="closeM('m-newchar')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Nome</label><input class="fi" id="nc-name" placeholder="Ex: Thorin Escudobalançante"></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Raça</label><input class="fi" id="nc-race" placeholder="Humano" list="dl-races"></div>
+        <div class="fg"><label class="fl">Classe</label><input class="fi" id="nc-class" placeholder="Guerreiro" list="dl-classes"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Nível</label><input type="number" class="fi" id="nc-level" value="1" min="1" max="20"></div>
+        <div class="fg"><label class="fl">Alinhamento</label><input class="fi" id="nc-align" placeholder="Neutro Bom"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="hbtn" onclick="closeM('m-newchar')">Cancelar</button>
+      <button class="hbtn primary" onclick="createChar()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Spell -->
+<div class="modal-bg" id="m-spell">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">✦ Adicionar Magia</div>
+      <button class="hbtn" onclick="closeM('m-spell')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Nome</label><input class="fi" id="sp-name" placeholder="Bola de Fogo"></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Nível</label>
+          <select class="fs" id="sp-level">
+            <option value="0">Truque</option>
+            <option value="1">1º</option><option value="2">2º</option><option value="3">3º</option>
+            <option value="4">4º</option><option value="5">5º</option><option value="6">6º</option>
+            <option value="7">7º</option><option value="8">8º</option><option value="9">9º</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Escola</label>
+          <select class="fs" id="sp-school">
+            <option>Evocação</option><option>Abjuração</option><option>Conjuração</option>
+            <option>Adivinhação</option><option>Encantamento</option><option>Ilusão</option>
+            <option>Necromancia</option><option>Transmutação</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Componentes</label><input class="fi" id="sp-comp" placeholder="V, S, M"></div>
+      <div class="fg"><label class="fl">Descrição</label><textarea class="ft" id="sp-desc"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="hbtn" onclick="closeM('m-spell')">Cancelar</button>
+      <button class="hbtn primary" onclick="addSpell()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Item -->
+<div class="modal-bg" id="m-item">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">✦ Adicionar Item</div>
+      <button class="hbtn" onclick="closeM('m-item')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Nome</label><input class="fi" id="it-name" placeholder="Espada Longa +1"></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Quantidade</label><input type="number" class="fi" id="it-qty" value="1" min="1"></div>
+        <div class="fg"><label class="fl">Peso (kg)</label><input class="fi" id="it-wt" placeholder="1.5"></div>
+      </div>
+      <div class="fg"><label class="fl">Descrição</label><textarea class="ft" id="it-desc" style="min-height:55px"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="hbtn" onclick="closeM('m-item')">Cancelar</button>
+      <button class="hbtn primary" onclick="addItem()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Feat -->
+<div class="modal-bg" id="m-feat">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">✦ Adicionar Talento</div>
+      <button class="hbtn" onclick="closeM('m-feat')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Nome</label><input class="fi" id="ft-name" placeholder="Alerta"></div>
+      <div class="fg"><label class="fl">Descrição</label><textarea class="ft" id="ft-desc"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="hbtn" onclick="closeM('m-feat')">Cancelar</button>
+      <button class="hbtn primary" onclick="addFeat()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Homebrew Manager -->
+<div class="modal-bg" id="m-homebrew">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-head">
+      <div class="modal-title">⚗ Gerenciador de Homebrew</div>
+      <button class="hbtn" onclick="closeM('m-homebrew')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="hb-tabs">
+        <button class="hb-tab on" onclick="switchHBTab('races',this)">Raças</button>
+        <button class="hb-tab" onclick="switchHBTab('classes',this)">Classes</button>
+        <button class="hb-tab" onclick="switchHBTab('spells',this)">Magias</button>
+        <button class="hb-tab" onclick="switchHBTab('items',this)">Itens</button>
+      </div>
+
+      <div class="hb-pane on" id="hb-races">
+        <div class="fg2" style="margin-bottom:.5rem">
+          <div class="fg"><label class="fl">Nome da Raça</label><input class="fi" id="hb-race-name" placeholder="Meio-dragão"></div>
+          <div class="fg"><label class="fl">Bônus de Atributo</label><input class="fi" id="hb-race-bonus" placeholder="+2 FOR, +1 CON"></div>
+        </div>
+        <div class="fg"><label class="fl">Características</label><textarea class="ft" id="hb-race-traits" placeholder="Resistência a fogo, voo 15m..." style="min-height:55px"></textarea></div>
+        <button class="hbtn primary" onclick="addHBRace()" style="width:100%;margin-top:.25rem">+ Adicionar Raça</button>
+        <div id="hb-races-list" style="margin-top:.6rem"></div>
+      </div>
+
+      <div class="hb-pane" id="hb-classes">
+        <div class="fg2" style="margin-bottom:.5rem">
+          <div class="fg"><label class="fl">Nome da Classe</label><input class="fi" id="hb-class-name" placeholder="Inventor Arcano"></div>
+          <div class="fg"><label class="fl">Dado de Vida</label><input class="fi" id="hb-class-hd" placeholder="d8"></div>
+        </div>
+        <div class="fg"><label class="fl">Descrição / Habilidades</label><textarea class="ft" id="hb-class-desc" placeholder="Magia, habilidades de classe..." style="min-height:55px"></textarea></div>
+        <button class="hbtn primary" onclick="addHBClass()" style="width:100%;margin-top:.25rem">+ Adicionar Classe</button>
+        <div id="hb-classes-list" style="margin-top:.6rem"></div>
+      </div>
+
+      <div class="hb-pane" id="hb-spells">
+        <div class="fg2" style="margin-bottom:.5rem">
+          <div class="fg"><label class="fl">Nome da Magia</label><input class="fi" id="hb-spell-name" placeholder="Chama Sombria"></div>
+          <div class="fg2">
+            <div class="fg"><label class="fl">Nível</label>
+              <select class="fs" id="hb-spell-level">
+                <option value="0">Truque</option><option value="1">1º</option><option value="2">2º</option>
+                <option value="3">3º</option><option value="4">4º</option><option value="5">5º</option>
+                <option value="6">6º</option><option value="7">7º</option><option value="8">8º</option><option value="9">9º</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">Escola</label><input class="fi" id="hb-spell-school" placeholder="Evocação"></div>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Descrição</label><textarea class="ft" id="hb-spell-desc" style="min-height:55px"></textarea></div>
+        <button class="hbtn primary" onclick="addHBSpell()" style="width:100%;margin-top:.25rem">+ Adicionar Magia</button>
+        <div id="hb-spells-list" style="margin-top:.6rem"></div>
+      </div>
+
+      <div class="hb-pane" id="hb-items">
+        <div class="fg2" style="margin-bottom:.5rem">
+          <div class="fg"><label class="fl">Nome do Item</label><input class="fi" id="hb-item-name" placeholder="Cajado das Sombras"></div>
+          <div class="fg"><label class="fl">Peso (kg)</label><input class="fi" id="hb-item-wt" placeholder="1.5"></div>
+        </div>
+        <div class="fg"><label class="fl">Descrição</label><textarea class="ft" id="hb-item-desc" style="min-height:55px"></textarea></div>
+        <button class="hbtn primary" onclick="addHBItem()" style="width:100%;margin-top:.25rem">+ Adicionar Item</button>
+        <div id="hb-items-list" style="margin-top:.6rem"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="hbtn" onclick="closeM('m-homebrew')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+<div class="undo-bar" id="undo-bar">
+  <span id="undo-msg">Alteração feita</span>
+  <button onclick="undoLast()">↩ DESFAZER</button>
+  <button onclick="document.getElementById('undo-bar').classList.remove('show')">✕</button>
+</div>
+
+<input type="file" id="zip-in" accept=".zip" style="display:none" onchange="handleZipImport(event)">
+<input type="file" id="json-in" accept=".json" style="display:none" onchange="handleJsonImport(event)">
+
+<script>
+/* ═══════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════ */
+const ATTRS = ['str','dex','con','int','wis','cha'];
+const ATTR_LBL = {str:'Força',dex:'Destreza',con:'Constituição',int:'Inteligência',wis:'Sabedoria',cha:'Carisma'};
+const SKILLS = [
+  {n:'Acrobacia',a:'dex'},{n:'Arcanismo',a:'int'},{n:'Atletismo',a:'str'},
+  {n:'Atuação',a:'cha'},{n:'Enganação',a:'cha'},{n:'Furtividade',a:'dex'},
+  {n:'História',a:'int'},{n:'Intimidação',a:'cha'},{n:'Intuição',a:'wis'},
+  {n:'Investigação',a:'int'},{n:'Lidar com Animais',a:'wis'},{n:'Medicina',a:'wis'},
+  {n:'Natureza',a:'int'},{n:'Percepção',a:'wis'},{n:'Persuasão',a:'cha'},
+  {n:'Prestidigitação',a:'dex'},{n:'Religião',a:'int'},{n:'Sobrevivência',a:'wis'}
+];
+const CONDITIONS=['Amedrontado','Agarrado','Atordoado','Cego','Dominado','Enfeitiçado','Envenenado','Exausto','Incapacitado','Inconsciente','Invisível','Paralisado','Petrificado','Prostrado','Surdo'];
+const SLOT_TABLE=[[0],[2,0,0],[3,0,0],[4,2,0],[4,3,0],[4,3,2],[4,3,3],[4,3,3,1],[4,3,3,2],[4,3,3,3,1],[4,3,3,3,2],[4,3,3,3,2,1],[4,3,3,3,2,1],[4,3,3,3,2,1,1],[4,3,3,3,2,1,1],[4,3,3,3,2,1,1,1],[4,3,3,3,2,1,1,1],[4,3,3,3,2,1,1,1,1],[4,3,3,3,3,1,1,1,1],[4,3,3,3,3,2,1,1,1],[4,3,3,3,3,2,2,1,1]];
+
+// SRD Spell library (subset — add more freely)
+const SRD_SPELLS = [
+  {n:'Luz',l:0,s:'Evocação'},{n:'Prestidigitação',l:0,s:'Transmutação'},{n:'Ilusão Menor',l:0,s:'Ilusão'},
+  {n:'Raio de Frio',l:0,s:'Evocação'},{n:'Chama Sagrada',l:0,s:'Evocação'},{n:'Taumaturgia',l:0,s:'Transmutação'},
+  {n:'Mísseis Mágicos',l:1,s:'Evocação'},{n:'Escudo',l:1,s:'Abjuração'},{n:'Dormir',l:1,s:'Encantamento'},
+  {n:'Cura de Ferimentos',l:1,s:'Evocação'},{n:'Graça de Benção',l:1,s:'Encantamento'},{n:'Detectar Magia',l:1,s:'Adivinhação'},
+  {n:'Armadura de Mago',l:1,s:'Abjuração'},{n:'Passo Nebuloso',l:2,s:'Conjuração'},{n:'Invisibilidade',l:2,s:'Ilusão'},
+  {n:'Sugestão',l:2,s:'Encantamento'},{n:'Cura em Massa',l:2,s:'Evocação'},{n:'Bola de Fogo',l:3,s:'Evocação'},
+  {n:'Relâmpago',l:3,s:'Evocação'},{n:'Voo',l:3,s:'Transmutação'},{n:'Contrafeitiço',l:3,s:'Abjuração'},
+  {n:'Dimensão Porta',l:4,s:'Conjuração'},{n:'Expulsar',l:4,s:'Abjuração'},{n:'Morte Maior',l:5,s:'Necromancia'},
+  {n:'Desejo',l:9,s:'Conjuração'},{n:'Metamorfose',l:4,s:'Transmutação'},{n:'Teleporte',l:7,s:'Conjuração'},
+];
+
+// SRD Item library
+const SRD_ITEMS = [
+  {n:'Espada Longa',w:'1.5'},{n:'Espada Curta',w:'0.9'},{n:'Adaga',w:'0.5'},
+  {n:'Arco Longo',w:'1'},{n:'Arco Curto',w:'0.9'},{n:'Besta Pesada',w:'4.5'},
+  {n:'Armadura de Couro',w:'5'},{n:'Cota de Malha',w:'20'},{n:'Escudo',w:'3'},
+  {n:'Capa de Elfo',w:'0.5'},{n:'Botas de Elfo',w:'0.5'},{n:'Poção de Cura',w:'0.3'},
+  {n:'Poção de Cura Superior',w:'0.3'},{n:'Varinha de Mísseis Mágicos',w:'0.5'},
+  {n:'Vara de Magia',w:'0.5'},{n:'Anel de Proteção',w:'0'},{n:'Amuleto de Saúde',w:'0'},
+  {n:'Corda (15m)',w:'1'},{n:'Tocha',w:'0.2'},{n:'Ração de Viagem',w:'0.3'},
+];
+
+/* ═══════════════════════════════════════
+   DATA & STORAGE
+   ═══════════════════════════════════════ */
+let chars=[], curId=null, undoStack=[], autoTimer=null, pointBuyMode=false;
+
+// Homebrew data
+let homebrew = {races:[],classes:[],spells:[],items:[]};
+
+function loadAll(){
+  try{chars=JSON.parse(localStorage.getItem('grim_chars')||'[]')}catch{chars=[]}
+  try{homebrew=JSON.parse(localStorage.getItem('grim_homebrew')||'{"races":[],"classes":[],"spells":[],"items":[]}')}catch{homebrew={races:[],classes:[],spells:[],items:[]}}
+  refreshDataLists();
+}
+function saveAll(){localStorage.setItem('grim_chars',JSON.stringify(chars))}
+function saveHB(){localStorage.setItem('grim_homebrew',JSON.stringify(homebrew))}
+
+function gc(){return chars.find(c=>c.id===curId)}
+
+function sf(path,val){
+  const ch=gc();if(!ch)return;
+  undoStack.push(JSON.parse(JSON.stringify(ch)));
+  if(undoStack.length>30)undoStack.shift();
+  showUndoBar('Campo atualizado');
+  const parts=path.split('.');
+  let obj=ch;
+  for(let i=0;i<parts.length-1;i++){if(!obj[parts[i]])obj[parts[i]]={};obj=obj[parts[i]];}
+  obj[parts[parts.length-1]]=val;
+  schedAuto();recalc();
+}
+
+function schedAuto(){clearTimeout(autoTimer);autoTimer=setTimeout(saveAll,1200)}
+function saveManual(){saveAll();toast('Salvo!','success')}
+
+function undoLast(){
+  if(!undoStack.length){toast('Nada a desfazer','info');return}
+  const snap=undoStack.pop();
+  const idx=chars.findIndex(c=>c.id===snap.id);
+  if(idx>=0){chars[idx]=snap;saveAll();refreshSheet();toast('Desfeito!','info')}
+  document.getElementById('undo-bar').classList.remove('show');
+}
+
+function defChar(name='Aventureiro',cls='Guerreiro',race='Humano',level=1,align=''){
+  return{
+    id:Date.now()+'_'+Math.random().toString(36).slice(2),
+    name,race,class:cls,subclass:'',background:'',alignment:align,
+    level,xp:0,age:'',height:'',weight:'',
+    attrs:{str:10,dex:10,con:10,int:10,wis:10,cha:10},
+    profBonus:Math.ceil(level/4)+1,
+    stProfs:[],skillProfs:[],expertSkills:[],
+    hp:{current:10,max:10,temp:0},
+    ac:10,initiative:0,speed:30,
+    hitDiceUsed:0,hitDiceType:'d8',
+    deathSaves:{success:[false,false,false],failure:[false,false,false]},
+    inspiration:false,
+    spells:[],spellSlots:{},
+    inventory:[],equipment:'',
+    coins:{pp:0,gp:0,ep:0,sp:0,cp:0},
+    feats:[],resistances:[],languages:[],proficiencies:[],
+    personality:'',ideals:'',bonds:'',flaws:'',backstory:'',
+    conditions:[],notes:'',
+    portrait:'',extraImages:[],
+    turnCount:1
+  };
+}
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════ */
+function goBack(){
+  document.getElementById('sheet-view').style.display='none';
+  document.getElementById('list-view').style.display='block';
+  document.getElementById('sheet-hdr').style.display='none';
+  document.getElementById('list-hdr').style.display='flex';
+  curId=null;renderList();
+}
+function openChar(id){
+  curId=id;
+  document.getElementById('list-view').style.display='none';
+  document.getElementById('sheet-view').style.display='block';
+  document.getElementById('list-hdr').style.display='none';
+  document.getElementById('sheet-hdr').style.display='flex';
+  refreshSheet();
+}
+
+/* ═══════════════════════════════════════
+   CHARACTER LIST
+   ═══════════════════════════════════════ */
+function renderList(){
+  const grid=document.getElementById('char-grid');
+  grid.innerHTML='';
+  chars.forEach(ch=>{
+    const pct=ch.hp.max>0?Math.max(0,Math.min(100,ch.hp.current/ch.hp.max*100)):0;
+    const col=pct>60?'#2d6e4e':pct>30?'#8a6a1a':'#7a1a1a';
+    const card=document.createElement('div');
+    card.className='char-card';
+    card.innerHTML=`
+      <div class="cc-portrait">${ch.portrait?`<img src="${ch.portrait}">`:(emoji(ch.class))}</div>
+      <div class="cc-name">${ch.name||'Sem nome'}</div>
+      <div class="cc-meta">${[ch.race,ch.class].filter(Boolean).join(' · ')} · Nv ${ch.level}</div>
+      <div class="cc-hpbar">
+        <div class="cc-hpbar-track"><div class="cc-hpbar-fill" style="width:${pct}%;background:${col}"></div></div>
+        <div class="cc-hpbar-label">${ch.hp.current}/${ch.hp.max}</div>
+      </div>
+      <div class="cc-actions">
+        <button class="hbtn primary" style="font-size:.58rem;padding:.25rem .5rem" onclick="event.stopPropagation();openChar('${ch.id}')">Abrir</button>
+        <button class="hbtn" style="font-size:.58rem;padding:.25rem .5rem" onclick="event.stopPropagation();dupChar('${ch.id}')">Copiar</button>
+        <button class="hbtn" style="font-size:.58rem;padding:.25rem .5rem;color:#ff8888;border-color:#5a1a1a" onclick="event.stopPropagation();delChar('${ch.id}')">✕</button>
+      </div>`;
+    grid.appendChild(card);
+  });
+  const nc=document.createElement('div');
+  nc.className='char-card new-card';
+  nc.innerHTML='<div class="new-card-plus">+</div><div>Novo Personagem</div>';
+  nc.onclick=openNewCharModal;
+  grid.appendChild(nc);
+}
+
+function emoji(cls=''){
+  const m={guerreiro:'⚔',mago:'🧙',clérigo:'✝',ladino:'🗡',bárbaro:'🪓',bardo:'🎵',druida:'🌿',monge:'👊',paladino:'⚜',patrulheiro:'🏹',feiticeiro:'✨',bruxo:'🌙'};
+  const k=Object.keys(m).find(k=>cls.toLowerCase().includes(k));
+  return m[k]||'🧝';
+}
+
+function dupChar(id){
+  const src=chars.find(c=>c.id===id);if(!src)return;
+  const cp=JSON.parse(JSON.stringify(src));
+  cp.id=Date.now()+'_dup';cp.name=src.name+' (Cópia)';
+  chars.push(cp);saveAll();renderList();toast('Copiado!','success');
+}
+function delChar(id){
+  if(!confirm('Deletar permanentemente?'))return;
+  chars=chars.filter(c=>c.id!==id);saveAll();renderList();toast('Deletado','info');
+}
+
+/* ═══════════════════════════════════════
+   NEW CHAR
+   ═══════════════════════════════════════ */
+function openNewCharModal(){openM('m-newchar')}
+function createChar(){
+  const ch=defChar(
+    document.getElementById('nc-name').value.trim()||'Aventureiro',
+    document.getElementById('nc-class').value.trim()||'Guerreiro',
+    document.getElementById('nc-race').value.trim()||'Humano',
+    +document.getElementById('nc-level').value||1,
+    document.getElementById('nc-align').value.trim()
+  );
+  chars.push(ch);saveAll();closeM('m-newchar');openChar(ch.id);toast('Personagem criado!','success');
+}
+
+/* ═══════════════════════════════════════
+   SHEET RENDER
+   ═══════════════════════════════════════ */
+function refreshSheet(){
+  const ch=gc();if(!ch)return;
+  buildAttrs(ch);buildST(ch);buildCombat(ch);buildSkills(ch);
+  buildConds(ch);buildSlots(ch);buildSpells(ch);buildInv(ch);
+  buildFeats(ch);buildResist(ch);buildLangs(ch);buildProfs(ch);
+  fillIdentity(ch);fillHP(ch);fillTextareas(ch);fillCoins(ch);
+  fillPortrait(ch);fillExtra(ch);fillRight(ch);
+}
+
+function fillIdentity(ch){
+  ['name','race','class','subclass','background','alignment'].forEach(k=>{
+    const el=document.getElementById('char-'+k);if(el)el.value=ch[k]||'';
+  });
+  document.getElementById('char-level').value=ch.level||1;
+  document.getElementById('char-xp').value=ch.xp||0;
+  document.getElementById('char-age').value=ch.age||'';
+}
+function fillTextareas(ch){
+  ['personality','ideals','bonds','flaws','backstory'].forEach(k=>{
+    const el=document.getElementById('bg-'+k);if(el)el.value=ch[k]||'';
+  });
+  document.getElementById('notes-txt').value=ch.notes||'';
+  document.getElementById('equip-txt').value=ch.equipment||'';
+}
+function fillCoins(ch){
+  ['pp','gp','ep','sp','cp'].forEach(k=>{
+    document.getElementById('coin-'+k).value=(ch.coins||{})[k]||0;
+  });
+}
+function fillRight(ch){
+  document.getElementById('init-display').value=ch.initiative||0;
+  document.getElementById('turn-num').textContent=ch.turnCount||1;
+  document.getElementById('hd-used').value=ch.hitDiceUsed||0;
+  document.getElementById('hd-max').textContent=ch.level||1;
+  document.getElementById('hd-type').value=ch.hitDiceType||'d8';
+  document.getElementById('pb-display').textContent='+'+(ch.profBonus||2);
+  const btn=document.getElementById('insp-btn');
+  btn.classList.toggle('on',ch.inspiration);
+  btn.textContent=ch.inspiration?'✦ INSPIRADO!':'✦ SEM INSPIRAÇÃO';
+  document.querySelectorAll('.dsave-pip').forEach(el=>{
+    el.classList.toggle('on',(ch.deathSaves||{success:[false,false,false],failure:[false,false,false]})[el.dataset.t][+el.dataset.i]);
+  });
+}
+
+/* ═══════════════════════════════════════
+   ATTRIBUTES & POINT BUY
+   ═══════════════════════════════════════ */
+const PB_COST={8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
+
+function buildAttrs(ch){
+  const grid=document.getElementById('attrs-grid');
+  grid.innerHTML='';
+  ATTRS.forEach(a=>{
+    const v=(ch.attrs||{})[a]||10;
+    const mod=modOf(v);
+    const box=document.createElement('div');
+    box.className='attr-box';box.id='ab-'+a;
+    box.innerHTML=`
+      <div class="attr-lbl">${ATTR_LBL[a]}</div>
+      <div class="attr-mod" id="am-${a}">${modStr(v)}</div>
+      <div class="attr-row">
+        <button class="attr-btn" onclick="adjAttr('${a}',-1)">−</button>
+        <input type="number" class="attr-num" id="an-${a}" value="${v}" min="1" max="30" onchange="setAttr('${a}',+this.value)">
+        <button class="attr-btn" onclick="adjAttr('${a}',1)">+</button>
+      </div>
+      <div class="attr-st" id="ast-${a}">
+        <div class="pdot ${(ch.stProfs||[]).includes(a)?'on':''}" onclick="togST('${a}',this)"></div>
+        <span id="stv-${a}"></span>
+      </div>`;
+    grid.appendChild(box);
+  });
+  recalc();
+}
+
+function modOf(v){return Math.floor((v-10)/2)}
+function modStr(v){const m=modOf(v);return(m>=0?'+':'')+m}
+function pb(ch){return ch.profBonus||Math.ceil((ch.level||1)/4)+1}
+
+function adjAttr(a,d){
+  const ch=gc();if(!ch)return;
+  const cur=(ch.attrs||{})[a]||10;
+  let nv=Math.max(1,Math.min(30,cur+d));
+  if(pointBuyMode){
+    // enforce PB constraints 8-15
+    nv=Math.max(8,Math.min(15,nv));
+    const cost=PB_COST[nv]||0;
+    const spent=ATTRS.reduce((s,aa)=>s+(aa===a?0:(PB_COST[(ch.attrs||{})[aa]||8]||0)),0);
+    if(cost+spent>27)return;
+  }
+  ch.attrs[a]=nv;
+  document.getElementById('an-'+a).value=nv;
+  const box=document.getElementById('ab-'+a);
+  box.classList.remove('bump');void box.offsetWidth;box.classList.add('bump');
+  schedAuto();recalc();updatePBBanner();
+}
+
+function setAttr(a,v){
+  const ch=gc();if(!ch)return;
+  ch.attrs[a]=Math.max(1,Math.min(30,v||10));
+  schedAuto();recalc();updatePBBanner();
+}
+
+function togST(a,dot){
+  const ch=gc();if(!ch)return;
+  ch.stProfs=ch.stProfs||[];
+  const i=ch.stProfs.indexOf(a);
+  if(i>=0)ch.stProfs.splice(i,1);else ch.stProfs.push(a);
+  dot.classList.toggle('on',ch.stProfs.includes(a));
+  schedAuto();recalc();
+}
+
+function recalc(){
+  const ch=gc();if(!ch)return;
+  const p=pb(ch);
+  ATTRS.forEach(a=>{
+    const v=(ch.attrs||{})[a]||10;
+    const mod=modOf(v);
+    const el=document.getElementById('am-'+a);if(el)el.textContent=modStr(v);
+    const hasP=(ch.stProfs||[]).includes(a);
+    const stv=document.getElementById('stv-'+a);
+    if(stv)stv.textContent=(mod+(hasP?p:0)>=0?'+':'')+(mod+(hasP?p:0))+' ST';
+  });
+  buildST(ch);buildSkills(ch);
+  buildCombat(ch);
+  const pbD=document.getElementById('pb-display');
+  if(pbD)pbD.textContent='+'+(ch.profBonus||2);
+}
+
+function togglePointBuy(){
+  pointBuyMode=!pointBuyMode;
+  const banner=document.getElementById('pb-banner');
+  const toggleBtn=document.getElementById('pb-toggle-btn');
+  banner.style.display=pointBuyMode?'flex':'none';
+  toggleBtn.style.display=pointBuyMode?'none':'block';
+  updatePBBanner();
+}
+
+function updatePBBanner(){
+  if(!pointBuyMode)return;
+  const ch=gc();if(!ch)return;
+  const spent=ATTRS.reduce((s,a)=>s+(PB_COST[(ch.attrs||{})[a]||8]||0),0);
+  document.getElementById('pb-pts').textContent=(27-spent)+' pts';
+  document.getElementById('pb-pts').style.color=spent>27?'#ff8888':'var(--gold)';
+}
+
+function buildST(ch){
+  const el=document.getElementById('st-list');if(!el)return;
+  const p=pb(ch);el.innerHTML='';
+  ATTRS.forEach(a=>{
+    const v=(ch.attrs||{})[a]||10,mod=modOf(v);
+    const hasP=(ch.stProfs||[]).includes(a);
+    const tot=mod+(hasP?p:0);
+    const row=document.createElement('div');
+    row.className='skill-row';
+    row.innerHTML=`<div class="pdot ${hasP?'on':''}" onclick="togST('${a}',this)"></div><div class="skill-name">${ATTR_LBL[a]}</div><div class="skill-bonus">${tot>=0?'+':''}${tot}</div>`;
+    el.appendChild(row);
+  });
+}
+
+/* ═══════════════════════════════════════
+   SKILLS
+   ═══════════════════════════════════════ */
+function buildSkills(ch){
+  const grid=document.getElementById('skills-grid');if(!grid)return;
+  grid.innerHTML='';
+  const p=pb(ch);
+  SKILLS.forEach(sk=>{
+    const v=(ch.attrs||{})[sk.a]||10,mod=modOf(v);
+    const hasP=(ch.skillProfs||[]).includes(sk.n);
+    const hasE=(ch.expertSkills||[]).includes(sk.n);
+    const bonus=mod+(hasP?p:0)+(hasE?p:0);
+    const row=document.createElement('div');
+    row.className='skill-row';
+    row.innerHTML=`
+      <div class="pdot ${hasP||hasE?'on':''}" style="${hasE?'background:var(--gold);':''}border-color:${hasE?'var(--gold)':'var(--gold-dim)'}" onclick="cycleSkill('${sk.n}',this)" title="${hasE?'Expertise':hasP?'Proficiente':''}"></div>
+      <div class="skill-name" title="${sk.a.toUpperCase()}">${sk.n}</div>
+      <div class="skill-bonus">${bonus>=0?'+':''}${bonus}</div>`;
+    grid.appendChild(row);
+  });
+}
+
+function cycleSkill(name,dot){
+  const ch=gc();if(!ch)return;
+  ch.skillProfs=ch.skillProfs||[];ch.expertSkills=ch.expertSkills||[];
+  const hasP=ch.skillProfs.includes(name),hasE=ch.expertSkills.includes(name);
+  if(!hasP&&!hasE)ch.skillProfs.push(name);
+  else if(hasP&&!hasE)ch.expertSkills.push(name);
+  else{ch.skillProfs=ch.skillProfs.filter(s=>s!==name);ch.expertSkills=ch.expertSkills.filter(s=>s!==name);}
+  schedAuto();buildSkills(ch);
+}
+
+/* ═══════════════════════════════════════
+   COMBAT STATS
+   ═══════════════════════════════════════ */
+function buildCombat(ch){
+  const row=document.getElementById('combat-row');if(!row)return;
+  const passPerc=10+modOf((ch.attrs||{}).wis||10)+((ch.skillProfs||[]).includes('Percepção')?pb(ch):0);
+  const stats=[
+    {id:'ac',lbl:'CA',f:'ac',def:10},
+    {id:'speed',lbl:'Deslocamento',f:'speed',def:30},
+    {id:'pb',lbl:'Proficiência',f:'profBonus',def:2},
+    {id:'pp',lbl:'Perc. Passiva',readonly:true,val:passPerc},
+  ];
+  row.innerHTML='';
+  stats.forEach(s=>{
+    const v=s.readonly?s.val:(ch[s.f]||s.def);
+    const div=document.createElement('div');div.className='combat-stat';
+    if(s.readonly){
+      div.innerHTML=`<div class="cs-lbl">${s.lbl}</div><div class="cs-num">${v}</div>`;
+    } else {
+      div.innerHTML=`
+        <div class="cs-lbl">${s.lbl}</div>
+        <div class="cs-val">
+          <button class="cs-btn" onclick="adjField('${s.f}',-1);buildCombat(gc());refreshProf()">−</button>
+          <input type="number" class="cs-ninput" id="csf-${s.id}" value="${v}" onchange="sf('${s.f}',+this.value);buildCombat(gc());refreshProf()">
+          <button class="cs-btn" onclick="adjField('${s.f}',1);buildCombat(gc());refreshProf()">+</button>
+        </div>`;
+    }
+    row.appendChild(div);
+  });
+}
+
+function adjField(f,d){const ch=gc();if(!ch)return;ch[f]=(ch[f]||0)+d;schedAuto();}
+function refreshProf(){const ch=gc();if(!ch)return;document.getElementById('pb-display').textContent='+'+(ch.profBonus||2);recalc();}
+function updInit(){const ch=gc();if(!ch)return;document.getElementById('init-display').value=ch.initiative||0;}
+
+/* ═══════════════════════════════════════
+   HP
+   ═══════════════════════════════════════ */
+function fillHP(ch){
+  document.getElementById('hp-cur').value=ch.hp.current||0;
+  document.getElementById('hp-max').value=ch.hp.max||10;
+  document.getElementById('hp-tmp').value=ch.hp.temp||0;
+  updHPBar(ch);
+}
+
+function updateHP(){
+  const ch=gc();if(!ch)return;
+  ch.hp.current=+document.getElementById('hp-cur').value||0;
+  ch.hp.max=+document.getElementById('hp-max').value||1;
+  ch.hp.temp=+document.getElementById('hp-tmp').value||0;
+  schedAuto();updHPBar(ch);
+}
+
+function updHPBar(ch){
+  const max=ch.hp.max||1,cur=Math.max(0,ch.hp.current);
+  const pct=Math.max(0,Math.min(100,cur/max*100));
+  const fill=document.getElementById('hp-fill');
+  const label=document.getElementById('hp-label');
+  const status=document.getElementById('hp-status');
+  let color,text,sts;
+  if(cur<=0){color='#3a0000';text='💀 INCONSCIENTE';sts='background:rgba(60,0,0,.3);color:#ff5555;border:1px solid #5a1a1a';}
+  else if(pct<=25){color='#7a1a1a';text='⚠ CRÍTICO';sts='background:rgba(100,0,0,.2);color:#ff7777;border:1px solid var(--blood)';}
+  else if(pct<=60){color='#8a6a1a';text='⚡ FERIDO';sts='background:rgba(120,90,0,.15);color:#ffc055;border:1px solid #7a5a14';}
+  else{color='#2d6e4e';text='✦ SAUDÁVEL';sts='background:rgba(45,110,78,.1);color:#7bffb0;border:1px solid #1a5a3a';}
+  fill.style.width=pct+'%';fill.style.background=color;
+  label.textContent=`${cur} / ${max}${ch.hp.temp?` (+${ch.hp.temp})`:''}`;
+  status.textContent=text;
+  status.style.cssText=sts+';font-family:Cinzel,serif;font-size:.62rem;letter-spacing:.12em;text-align:center;padding:.2rem;border-radius:3px;margin-top:.35rem;';
+}
+
+function adjHP(d){const ch=gc();if(!ch)return;ch.hp.current=Math.max(0,Math.min(ch.hp.max,ch.hp.current+d));document.getElementById('hp-cur').value=ch.hp.current;schedAuto();updHPBar(ch);}
+function adjMaxHP(d){const ch=gc();if(!ch)return;ch.hp.max=Math.max(1,ch.hp.max+d);document.getElementById('hp-max').value=ch.hp.max;schedAuto();updHPBar(ch);}
+function adjTmpHP(d){const ch=gc();if(!ch)return;ch.hp.temp=Math.max(0,ch.hp.temp+d);document.getElementById('hp-tmp').value=ch.hp.temp;schedAuto();updHPBar(ch);}
+
+function applyDmg(){
+  const ch=gc();if(!ch)return;let v=+document.getElementById('hp-val').value||0;if(v<=0)return;
+  if(ch.hp.temp>0){const abs=Math.min(ch.hp.temp,v);ch.hp.temp-=abs;v-=abs;}
+  ch.hp.current=Math.max(0,ch.hp.current-v);
+  document.getElementById('hp-cur').value=ch.hp.current;
+  document.getElementById('hp-tmp').value=ch.hp.temp;
+  document.getElementById('hp-val').value='';
+  schedAuto();updHPBar(ch);toast(`${v} de dano`,'error');
+}
+function applyHeal(){
+  const ch=gc();if(!ch)return;const v=+document.getElementById('hp-val').value||0;if(v<=0)return;
+  ch.hp.current=Math.min(ch.hp.max,ch.hp.current+v);
+  document.getElementById('hp-cur').value=ch.hp.current;
+  document.getElementById('hp-val').value='';
+  schedAuto();updHPBar(ch);toast(`+${v} HP curados`,'success');
+}
+function applyTmp(){
+  const ch=gc();if(!ch)return;const v=+document.getElementById('hp-val').value||0;if(v<=0)return;
+  ch.hp.temp=Math.max(ch.hp.temp,v);
+  document.getElementById('hp-tmp').value=ch.hp.temp;
+  document.getElementById('hp-val').value='';
+  schedAuto();updHPBar(ch);toast(`+${v} HP temporário`,'info');
+}
+
+/* ═══════════════════════════════════════
+   CONDITIONS
+   ═══════════════════════════════════════ */
+function buildConds(ch){
+  const grid=document.getElementById('cond-grid');grid.innerHTML='';
+  CONDITIONS.forEach(c=>{
+    const on=(ch.conditions||[]).includes(c);
+    const tag=document.createElement('div');
+    tag.className='cond-tag'+(on?' on':'');tag.textContent=c;
+    tag.onclick=()=>{
+      ch.conditions=ch.conditions||[];
+      const i=ch.conditions.indexOf(c);
+      if(i>=0)ch.conditions.splice(i,1);else ch.conditions.push(c);
+      tag.classList.toggle('on',ch.conditions.includes(c));schedAuto();
+    };
+    grid.appendChild(tag);
+  });
+}
+
+/* ═══════════════════════════════════════
+   SPELL SLOTS
+   ═══════════════════════════════════════ */
+function buildSlots(ch){
+  const grid=document.getElementById('spell-slots');if(!grid)return;
+  grid.innerHTML='';
+  const lvl=Math.min(20,ch.level||1);
+  const def=SLOT_TABLE[lvl]||[];
+  ch.spellSlots=ch.spellSlots||{};
+  for(let i=1;i<=9;i++){
+    const maxS=def[i-1]||0;
+    if(!ch.spellSlots[i])ch.spellSlots[i]={max:maxS,used:0};
+    const slot=ch.spellSlots[i];
+    const cell=document.createElement('div');cell.className='slot-cell';
+    let pips='';
+    for(let p=0;p<slot.max;p++){
+      pips+=`<div class="slot-pip ${p<(slot.max-slot.used)?'avail':'used'}" onclick="togSlot(${i},${p})"></div>`;
+    }
+    cell.innerHTML=`<div class="slot-lv">${i}º</div><div class="slot-pips">${pips||'—'}</div>`;
+    grid.appendChild(cell);
+  }
+}
+function togSlot(level,idx){
+  const ch=gc();if(!ch)return;
+  ch.spellSlots=ch.spellSlots||{};
+  const slot=ch.spellSlots[level]||{max:0,used:0};
+  const avail=slot.max-slot.used;
+  if(idx<avail)slot.used++;else if(slot.used>0)slot.used--;
+  ch.spellSlots[level]=slot;schedAuto();buildSlots(ch);
+}
+
+/* ═══════════════════════════════════════
+   SPELLS + SEARCH
+   ═══════════════════════════════════════ */
+function buildSpells(ch){
+  const list=document.getElementById('spell-list');if(!list)return;
+  list.innerHTML='';
+  (ch.spells||[]).forEach((sp,i)=>{
+    const div=document.createElement('div');div.className='spell-item';
+    div.innerHTML=`<div class="spell-badge">${sp.level===0?'Truque':`Nv ${sp.level}`}</div><div class="spell-name-txt">${sp.name}</div><div class="spell-school-txt">${sp.school||''}</div><button class="rm-btn" onclick="rmSpell(${i})">✕</button>`;
+    list.appendChild(div);
+  });
+}
+
+function searchSpells(q){
+  const dd=document.getElementById('spell-dropdown');
+  if(!q){dd.classList.remove('open');return;}
+  const combined=[...SRD_SPELLS,...(homebrew.spells||[]).map(s=>({n:s.name,l:+s.level,s:s.school,hb:true}))];
+  const results=combined.filter(s=>s.n.toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  if(!results.length){dd.classList.remove('open');return;}
+  dd.innerHTML='';
+  results.forEach(s=>{
+    const div=document.createElement('div');div.className='search-item';
+    div.innerHTML=`<div class="search-item-badge">${s.l===0?'Truque':`Nv ${s.l}`}</div><div class="search-item-name">${s.n}${s.hb?' ⚗':''}</div><div class="search-item-sub">${s.s||''}</div>`;
+    div.onclick=()=>{
+      quickAddSpell({name:s.n,level:s.l,school:s.s||''});
+      document.getElementById('spell-search').value='';
+      dd.classList.remove('open');
+    };
+    dd.appendChild(div);
+  });
+  dd.classList.add('open');
+}
+
+function quickAddSpell(sp){
+  const ch=gc();if(!ch)return;
+  ch.spells=ch.spells||[];
+  if(ch.spells.find(s=>s.name===sp.name)){toast('Magia já adicionada','info');return;}
+  ch.spells.push(sp);schedAuto();buildSpells(ch);toast(`${sp.name} adicionada!`,'success');
+}
+
+function openAddSpellModal(){document.getElementById('sp-name').value='';document.getElementById('sp-desc').value='';openM('m-spell')}
+function addSpell(){
+  const ch=gc();if(!ch)return;
+  const name=document.getElementById('sp-name').value.trim();if(!name)return;
+  ch.spells=ch.spells||[];
+  ch.spells.push({name,level:+document.getElementById('sp-level').value||0,school:document.getElementById('sp-school').value,components:document.getElementById('sp-comp').value,desc:document.getElementById('sp-desc').value});
+  schedAuto();closeM('m-spell');buildSpells(ch);toast('Magia adicionada!','success');
+}
+function rmSpell(i){const ch=gc();if(!ch)return;ch.spells.splice(i,1);schedAuto();buildSpells(ch);}
+
+/* ═══════════════════════════════════════
+   INVENTORY + SEARCH
+   ═══════════════════════════════════════ */
+function buildInv(ch){
+  const list=document.getElementById('inv-list');if(!list)return;
+  list.innerHTML='';
+  (ch.inventory||[]).forEach((it,i)=>{
+    const div=document.createElement('div');div.className='inv-item';
+    div.innerHTML=`<div class="inv-qty">${it.qty}x</div><div class="inv-name">${it.name}</div><div class="inv-wt">${it.weight?it.weight+'kg':''}</div><button class="rm-btn" onclick="rmItem(${i})">✕</button>`;
+    list.appendChild(div);
+  });
+}
+
+function searchItems(q){
+  const dd=document.getElementById('item-dropdown');
+  if(!q){dd.classList.remove('open');return;}
+  const combined=[...SRD_ITEMS,...(homebrew.items||[]).map(it=>({n:it.name,w:it.weight,hb:true}))];
+  const results=combined.filter(it=>it.n.toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  if(!results.length){dd.classList.remove('open');return;}
+  dd.innerHTML='';
+  results.forEach(it=>{
+    const div=document.createElement('div');div.className='search-item';
+    div.innerHTML=`<div class="search-item-name">${it.n}${it.hb?' ⚗':''}</div><div class="search-item-sub">${it.w?it.w+'kg':''}</div>`;
+    div.onclick=()=>{
+      quickAddItem({name:it.n,qty:1,weight:it.w||''});
+      document.getElementById('item-search').value='';
+      dd.classList.remove('open');
+    };
+    dd.appendChild(div);
+  });
+  dd.classList.add('open');
+}
+
+function quickAddItem(it){
+  const ch=gc();if(!ch)return;
+  ch.inventory=ch.inventory||[];
+  ch.inventory.push(it);schedAuto();buildInv(ch);toast(`${it.name} adicionado!`,'success');
+}
+
+function openAddItemModal(){document.getElementById('it-name').value='';document.getElementById('it-qty').value='1';document.getElementById('it-wt').value='';document.getElementById('it-desc').value='';openM('m-item')}
+function addItem(){
+  const ch=gc();if(!ch)return;
+  const name=document.getElementById('it-name').value.trim();if(!name)return;
+  ch.inventory=ch.inventory||[];
+  ch.inventory.push({name,qty:+document.getElementById('it-qty').value||1,weight:document.getElementById('it-wt').value,desc:document.getElementById('it-desc').value});
+  schedAuto();closeM('m-item');buildInv(ch);toast('Item adicionado!','success');
+}
+function rmItem(i){const ch=gc();if(!ch)return;ch.inventory.splice(i,1);schedAuto();buildInv(ch);}
+
+/* ═══════════════════════════════════════
+   FEATS
+   ═══════════════════════════════════════ */
+function buildFeats(ch){
+  const list=document.getElementById('feats-list');if(!list)return;
+  list.innerHTML='';
+  (ch.feats||[]).forEach((f,i)=>{
+    const div=document.createElement('div');div.className='feat-item';
+    div.innerHTML=`<div style="flex:1"><div class="feat-name">${f.name}</div>${f.desc?`<div class="feat-desc">${f.desc}</div>`:''}</div><button class="rm-btn" onclick="rmFeat(${i})">✕</button>`;
+    list.appendChild(div);
+  });
+}
+function openAddFeatModal(){document.getElementById('ft-name').value='';document.getElementById('ft-desc').value='';openM('m-feat')}
+function addFeat(){
+  const ch=gc();if(!ch)return;
+  const name=document.getElementById('ft-name').value.trim();if(!name)return;
+  ch.feats=ch.feats||[];ch.feats.push({name,desc:document.getElementById('ft-desc').value});
+  schedAuto();closeM('m-feat');buildFeats(ch);toast('Talento adicionado!','success');
+}
+function rmFeat(i){const ch=gc();if(!ch)return;ch.feats.splice(i,1);schedAuto();buildFeats(ch);}
+
+/* ═══════════════════════════════════════
+   RESISTANCES / LANGUAGES / PROFICIENCIES
+   ═══════════════════════════════════════ */
+function buildResist(ch){
+  const area=document.getElementById('resist-area');if(!area)return;
+  area.innerHTML='';
+  (ch.resistances||[]).forEach((r,i)=>{
+    const tag=document.createElement('span');tag.className=`rtag ${r.type}`;
+    tag.innerHTML=`${r.damage} <button onclick="rmResist(${i})" style="background:none;border:none;cursor:pointer;color:inherit;font-size:.65rem;padding:0;margin-left:2px">✕</button>`;
+    area.appendChild(tag);
+  });
+}
+function addResistance(){
+  const n=prompt('Dano (ex: Fogo):');if(!n)return;
+  const t=prompt('Tipo (resist/immune/vuln):','resist');
+  const ch=gc();if(!ch)return;
+  ch.resistances=ch.resistances||[];ch.resistances.push({damage:n.trim(),type:(t||'resist').trim()});
+  schedAuto();buildResist(ch);
+}
+function rmResist(i){const ch=gc();if(!ch)return;ch.resistances.splice(i,1);schedAuto();buildResist(ch);}
+
+function buildLangs(ch){
+  const area=document.getElementById('lang-area');if(!area)return;
+  area.innerHTML='';
+  (ch.languages||[]).forEach((l,i)=>{
+    const tag=document.createElement('span');tag.className='lang-tag';
+    tag.innerHTML=`${l} <button onclick="rmLang(${i})" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:.65rem;padding:0">✕</button>`;
+    area.appendChild(tag);
+  });
+}
+function addLanguage(){const l=prompt('Idioma:');if(!l)return;const ch=gc();if(!ch)return;ch.languages=ch.languages||[];ch.languages.push(l.trim());schedAuto();buildLangs(ch);}
+function rmLang(i){const ch=gc();if(!ch)return;ch.languages.splice(i,1);schedAuto();buildLangs(ch);}
+
+function buildProfs(ch){
+  const list=document.getElementById('prof-list');if(!list)return;
+  list.innerHTML='';
+  (ch.proficiencies||[]).forEach((p,i)=>{
+    const div=document.createElement('div');div.className='skill-row';div.style.paddingTop='.2rem';
+    div.innerHTML=`<span style="font-size:.75rem;color:var(--text-dim);margin-right:4px">⚔</span><span style="flex:1;font-size:.78rem">${p}</span><button class="rm-btn" onclick="rmProf(${i})">✕</button>`;
+    list.appendChild(div);
+  });
+}
+function addProficiency(){const p=prompt('Proficiência:');if(!p)return;const ch=gc();if(!ch)return;ch.proficiencies=ch.proficiencies||[];ch.proficiencies.push(p.trim());schedAuto();buildProfs(ch);}
+function rmProf(i){const ch=gc();if(!ch)return;ch.proficiencies.splice(i,1);schedAuto();buildProfs(ch);}
+
+/* ═══════════════════════════════════════
+   RIGHT PANEL ACTIONS
+   ═══════════════════════════════════════ */
+function toggleInsp(){
+  const ch=gc();if(!ch)return;ch.inspiration=!ch.inspiration;schedAuto();
+  const btn=document.getElementById('insp-btn');
+  btn.classList.toggle('on',ch.inspiration);
+  btn.textContent=ch.inspiration?'✦ INSPIRADO!':'✦ SEM INSPIRAÇÃO';
+  if(ch.inspiration)toast('Inspiração!','success');
+}
+function adjTurn(d){const ch=gc();if(!ch)return;ch.turnCount=Math.max(1,(ch.turnCount||1)+d);document.getElementById('turn-num').textContent=ch.turnCount;schedAuto();}
+function resetTurn(){const ch=gc();if(!ch)return;ch.turnCount=1;document.getElementById('turn-num').textContent=1;schedAuto();}
+function togDS(el){
+  const ch=gc();if(!ch)return;
+  ch.deathSaves=ch.deathSaves||{success:[false,false,false],failure:[false,false,false]};
+  const t=el.dataset.t,i=+el.dataset.i;
+  ch.deathSaves[t][i]=!ch.deathSaves[t][i];
+  el.classList.toggle('on',ch.deathSaves[t][i]);schedAuto();
+  if(ch.deathSaves.failure.filter(Boolean).length>=3)toast('💀 Personagem morreu!','error');
+  if(ch.deathSaves.success.filter(Boolean).length>=3)toast('✦ Estabilizado!','success');
+}
+function resetDS(){
+  const ch=gc();if(!ch)return;
+  ch.deathSaves={success:[false,false,false],failure:[false,false,false]};
+  document.querySelectorAll('.dsave-pip').forEach(el=>el.classList.remove('on'));schedAuto();
+}
+function adjHD(d){const ch=gc();if(!ch)return;ch.hitDiceUsed=Math.max(0,Math.min(ch.level,(ch.hitDiceUsed||0)+d));document.getElementById('hd-used').value=ch.hitDiceUsed;schedAuto();}
+
+/* ═══════════════════════════════════════
+   PORTRAIT & IMAGES
+   ═══════════════════════════════════════ */
+function triggerPortraitUpload(){document.getElementById('portrait-input').click()}
+function loadPortrait(e){
+  const f=e.target.files[0];if(!f)return;
+  compressImg(f,400,400,url=>{const ch=gc();if(!ch)return;ch.portrait=url;schedAuto();fillPortrait(ch);toast('Retrato atualizado!','success');});
+}
+function fillPortrait(ch){
+  const img=document.getElementById('portrait-img'),ph=document.getElementById('portrait-ph');
+  if(ch.portrait){img.src=ch.portrait;img.style.display='block';ph.style.display='none';}
+  else{img.style.display='none';ph.style.display='flex';}
+}
+function triggerExtra(){document.getElementById('extra-input').click()}
+function loadExtra(e){
+  const files=Array.from(e.target.files);const ch=gc();if(!ch)return;
+  ch.extraImages=ch.extraImages||[];let done=0;
+  files.forEach(f=>compressImg(f,600,600,url=>{ch.extraImages.push(url);done++;if(done===files.length){schedAuto();fillExtra(ch);}}));
+}
+function fillExtra(ch){
+  const cont=document.getElementById('extra-thumbs');if(!cont)return;
+  cont.innerHTML='';
+  (ch.extraImages||[]).forEach((src,i)=>{
+    const w=document.createElement('div');w.style.cssText='position:relative;width:55px;height:55px';
+    const img=document.createElement('img');img.src=src;img.style.cssText='width:55px;height:55px;object-fit:cover;border-radius:3px;border:1px solid var(--border);cursor:pointer';img.onclick=()=>window.open(src,'_blank');
+    const rm=document.createElement('button');rm.textContent='✕';rm.style.cssText='position:absolute;top:-3px;right:-3px;background:var(--blood);border:none;color:white;border-radius:50%;width:14px;height:14px;font-size:.55rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1';rm.onclick=()=>{ch.extraImages.splice(i,1);schedAuto();fillExtra(ch);};
+    w.appendChild(img);w.appendChild(rm);cont.appendChild(w);
+  });
+}
+function dragOver(e){e.preventDefault();document.getElementById('extra-drop').classList.add('drag-over')}
+function dragLeave(){document.getElementById('extra-drop').classList.remove('drag-over')}
+function dropExtra(e){
+  e.preventDefault();document.getElementById('extra-drop').classList.remove('drag-over');
+  const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));if(!files.length)return;
+  const ch=gc();if(!ch)return;ch.extraImages=ch.extraImages||[];let done=0;
+  files.forEach(f=>compressImg(f,600,600,url=>{ch.extraImages.push(url);done++;if(done===files.length){schedAuto();fillExtra(ch);toast('Imagem adicionada!','success');}}));
+}
+function compressImg(file,mw,mh,cb){
+  const r=new FileReader();
+  r.onload=e=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');const rt=Math.min(mw/img.width,mh/img.height,1);c.width=img.width*rt;c.height=img.height*rt;c.getContext('2d').drawImage(img,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.75));};img.src=e.target.result;};
+  r.readAsDataURL(file);
+}
+
+/* ═══════════════════════════════════════
+   TABS
+   ═══════════════════════════════════════ */
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+  if(btn)btn.classList.add('on');
+}
+
+/* ═══════════════════════════════════════
+   HOMEBREW MANAGER
+   ═══════════════════════════════════════ */
+function openHomebrewManager(){
+  renderHBLists();openM('m-homebrew');
+}
+
+function switchHBTab(name,btn){
+  document.querySelectorAll('.hb-pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.hb-tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('hb-'+name).classList.add('on');
+  if(btn)btn.classList.add('on');
+}
+
+function addHBRace(){
+  const name=document.getElementById('hb-race-name').value.trim();if(!name)return;
+  homebrew.races.push({name,bonus:document.getElementById('hb-race-bonus').value,traits:document.getElementById('hb-race-traits').value});
+  saveHB();refreshDataLists();renderHBLists();
+  document.getElementById('hb-race-name').value='';document.getElementById('hb-race-bonus').value='';document.getElementById('hb-race-traits').value='';
+  toast('Raça adicionada!','success');
+}
+function addHBClass(){
+  const name=document.getElementById('hb-class-name').value.trim();if(!name)return;
+  homebrew.classes.push({name,hd:document.getElementById('hb-class-hd').value,desc:document.getElementById('hb-class-desc').value});
+  saveHB();refreshDataLists();renderHBLists();
+  document.getElementById('hb-class-name').value='';document.getElementById('hb-class-hd').value='';document.getElementById('hb-class-desc').value='';
+  toast('Classe adicionada!','success');
+}
+function addHBSpell(){
+  const name=document.getElementById('hb-spell-name').value.trim();if(!name)return;
+  homebrew.spells.push({name,level:document.getElementById('hb-spell-level').value,school:document.getElementById('hb-spell-school').value,desc:document.getElementById('hb-spell-desc').value});
+  saveHB();renderHBLists();
+  document.getElementById('hb-spell-name').value='';document.getElementById('hb-spell-desc').value='';
+  toast('Magia homebrew adicionada!','success');
+}
+function addHBItem(){
+  const name=document.getElementById('hb-item-name').value.trim();if(!name)return;
+  homebrew.items.push({name,weight:document.getElementById('hb-item-wt').value,desc:document.getElementById('hb-item-desc').value});
+  saveHB();renderHBLists();
+  document.getElementById('hb-item-name').value='';document.getElementById('hb-item-wt').value='';document.getElementById('hb-item-desc').value='';
+  toast('Item homebrew adicionado!','success');
+}
+
+function rmHB(type,i){homebrew[type].splice(i,1);saveHB();refreshDataLists();renderHBLists();}
+
+function renderHBLists(){
+  ['races','classes','spells','items'].forEach(type=>{
+    const list=document.getElementById('hb-'+type+'-list');if(!list)return;
+    list.innerHTML='';
+    homebrew[type].forEach((it,i)=>{
+      const div=document.createElement('div');div.className='hb-item';
+      div.innerHTML=`<div style="flex:1"><div class="hb-item-name">${it.name}</div><div class="hb-item-sub">${it.bonus||it.hd||it.school||it.weight||''}</div></div><button class="rm-btn" onclick="rmHB('${type}',${i})">✕</button>`;
+      list.appendChild(div);
+    });
+  });
+}
+
+function refreshDataLists(){
+  const SRD_RACES=['Humano','Elfo','Anão','Halfling','Gnomo','Meio-Elfo','Meio-Orc','Draconato','Tiefling'];
+  const SRD_CLASSES=['Bárbaro','Bardo','Clérigo','Druida','Feiticeiro','Guerreiro','Ladino','Mago','Monge','Paladino','Patrulheiro','Bruxo'];
+  const dlRaces=document.getElementById('dl-races');
+  const dlClasses=document.getElementById('dl-classes');
+  if(dlRaces){
+    dlRaces.innerHTML='';
+    [...SRD_RACES,...(homebrew.races||[]).map(r=>r.name)].forEach(n=>{const o=document.createElement('option');o.value=n;dlRaces.appendChild(o);});
+  }
+  if(dlClasses){
+    dlClasses.innerHTML='';
+    [...SRD_CLASSES,...(homebrew.classes||[]).map(c=>c.name)].forEach(n=>{const o=document.createElement('option');o.value=n;dlClasses.appendChild(o);});
+  }
+}
+
+/* ═══════════════════════════════════════
+   IMPORT / EXPORT
+   ═══════════════════════════════════════ */
+function exportJSON(){
+  const ch=gc();if(!ch)return;
+  dlBlob(new Blob([JSON.stringify(ch,null,2)],{type:'application/json'}),(ch.name||'personagem').replace(/\s+/g,'_')+'.json');
+  toast('JSON exportado!','success');
+}
+function importJSON(){document.getElementById('json-in').click()}
+function handleJsonImport(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{const ch=JSON.parse(ev.target.result);if(!ch.id)ch.id=Date.now()+'_imp';chars.push(ch);saveAll();renderList();toast('Importado!','success');}catch(err){toast('Erro: '+err.message,'error');}};
+  r.readAsText(f);e.target.value='';
+}
+function importZip(){document.getElementById('zip-in').click()}
+async function handleZipImport(e){
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const zip=await JSZip.loadAsync(f);
+    const jf=zip.file('character.json');if(!jf)throw new Error('character.json não encontrado');
+    const ch=JSON.parse(await jf.async('text'));
+    if(!ch.id)ch.id=Date.now()+'_zip';
+    const pf=zip.file('images/portrait.jpg')||zip.file('images/portrait.png');
+    if(pf){const b64=await pf.async('base64');ch.portrait='data:image/jpeg;base64,'+b64;}
+    ch.extraImages=[];
+    const ef=zip.folder('images/extras');
+    if(ef){const arr=[];ef.forEach((_,file)=>{if(!file.dir)arr.push(file);});for(const file of arr){const b64=await file.async('base64');ch.extraImages.push('data:image/jpeg;base64,'+b64);}}
+    chars.push(ch);saveAll();renderList();toast('ZIP importado!','success');
+  }catch(err){toast('Erro ZIP: '+err.message,'error');}
+  e.target.value='';
+}
+async function exportZIP(){
+  const ch=gc();if(!ch)return;toast('Gerando ZIP...','info');
+  try{
+    const zip=new JSZip();
+    const data=JSON.parse(JSON.stringify(ch));
+    const portrait=data.portrait;data.portrait='';
+    const extras=data.extraImages||[];data.extraImages=[];
+    zip.file('character.json',JSON.stringify(data,null,2));
+    zip.file('metadata.json',JSON.stringify({exported:new Date().toISOString(),version:'2.0',app:'Grimório RPG'},null,2));
+    const imgDir=zip.folder('images');
+    if(portrait)imgDir.file('portrait.jpg',portrait.split(',')[1],{base64:true});
+    const extDir=imgDir.folder('extras');
+    extras.forEach((src,i)=>extDir.file(`extra_${i}.jpg`,src.split(',')[1],{base64:true}));
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    dlBlob(blob,(ch.name||'personagem').replace(/\s+/g,'_')+'.zip');
+    toast('ZIP exportado!','success');
+  }catch(err){toast('Erro: '+err.message,'error');}
+}
+function dlBlob(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+
+/* ═══════════════════════════════════════
+   MODAL HELPERS
+   ═══════════════════════════════════════ */
+function openM(id){document.getElementById(id).classList.add('open')}
+function closeM(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('open')}));
+
+/* ═══════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════ */
+function toast(msg,type='info'){
+  const cont=document.getElementById('toasts');
+  const t=document.createElement('div');t.className=`toast ${type}`;
+  const icons={success:'✓',error:'✕',info:'✦'};
+  t.innerHTML=`<span class="ti">${icons[type]||'•'}</span><span>${msg}</span>`;
+  cont.appendChild(t);
+  setTimeout(()=>{t.style.animation='toastOut .25s ease forwards';setTimeout(()=>t.remove(),250);},2800);
+}
+
+/* ═══════════════════════════════════════
+   UNDO BAR
+   ═══════════════════════════════════════ */
+function showUndoBar(msg){
+  document.getElementById('undo-msg').textContent=msg;
+  const bar=document.getElementById('undo-bar');bar.classList.add('show');
+  clearTimeout(window._undoT);window._undoT=setTimeout(()=>bar.classList.remove('show'),5000);
+}
+
+/* ═══════════════════════════════════════
+   KEYBOARD SHORTCUTS
+   ═══════════════════════════════════════ */
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(curId)saveManual();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undoLast();}
+  if(e.key==='Escape')document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+});
+
+// Close dropdowns on outside click
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.search-wrap'))document.querySelectorAll('.search-dropdown').forEach(d=>d.classList.remove('open'));
+});
+
+/* ═══════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════ */
+loadAll();
+renderList();
+</script>
+</body>
+</html>
