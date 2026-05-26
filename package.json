@@ -1,0 +1,30 @@
+{
+  "name": "grimorio",
+  "version": "1.0.0",
+  "description": "Ficha de D^&D — App Desktop Offline",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.grimorio.app",
+    "productName": "Grimorio",
+    "files": [
+      "src/**",
+      "electron/**",
+      "database/**"
+    ],
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "sql.js": "^1.14.1"
+  }
+}

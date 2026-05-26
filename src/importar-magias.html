@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grimório — Importar Magias</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Variáveis do tema (mesmo do index.html) ── */
+    :root {
+      --bg:         #0e0c09;
+      --surface:    #161310;
+      --raised:     #1e1a14;
+      --border:     #2e2518;
+      --border-hi:  #4a3a20;
+      --gold:       #c8a84b;
+      --gold-dim:   #7a6330;
+      --gold-pale:  #f0d98a;
+      --blood:      #8b1a1a;
+      --blood-hi:   #c0392b;
+      --text:       #d4c9b0;
+      --text-dim:   #7a6f5a;
+      --text-hi:    #f0e8d0;
+      --radius:     4px;
+      --shadow:     0 2px 12px rgba(0,0,0,.6);
+      --green:      #2d6e4e;
+      --green-hi:   #7bffb0;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 15px;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* ── Layout ── */
+    .page-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ── Cabeçalho ── */
+    .page-header {
+      text-align: center;
+      border-bottom: 1px solid var(--border-hi);
+      padding-bottom: 1.25rem;
+    }
+
+    .page-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.6rem;
+      color: var(--gold);
+      letter-spacing: .05em;
+    }
+
+    .page-title::before,
+    .page-title::after { content: ' ✦ '; color: var(--blood-hi); font-size: 1rem; }
+
+    .page-subtitle {
+      font-size: .9rem;
+      color: var(--text-dim);
+      margin-top: .4rem;
+      font-style: italic;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-family: 'Cinzel', serif;
+      font-size: .6rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: .35rem .75rem;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all .18s;
+      margin-bottom: 1rem;
+    }
+    .back-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+    /* ── Cards de seção ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+
+    .card-title {
+      font-family: 'Cinzel', serif;
+      font-size: .65rem;
+      color: var(--gold);
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      padding-bottom: .5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .card-title .badge {
+      background: var(--gold-dim);
+      color: var(--bg);
+      font-size: .5rem;
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+
+    /* ── Textarea de JSON ── */
+    .json-textarea {
+      width: 100%;
+      min-height: 180px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: .75rem;
+      font-family: 'Courier New', monospace;
+      font-size: .8rem;
+      line-height: 1.6;
+      resize: vertical;
+      transition: border-color .18s;
+    }
+
+    .json-textarea:focus {
+      outline: none;
+      border-color: var(--gold-dim);
+    }
+
+    .json-textarea::placeholder { color: var(--text-dim); }
+
+    /* ── Botões ── */
+    .btn-row {
+      display: flex;
+      gap: .5rem;
+      margin-top: .75rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: 'Cinzel', serif;
+      font-size: .62rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: .5rem 1rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all .18s;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      border: 1px solid;
+    }
+
+    .btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--gold-dim);
+      border-color: var(--gold-dim);
+      color: var(--bg);
+    }
+    .btn-primary:not(:disabled):hover {
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border-color: var(--border-hi);
+      color: var(--text-dim);
+    }
+    .btn-secondary:not(:disabled):hover {
+      border-color: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    .btn-api {
+      background: rgba(45,110,78,.15);
+      border-color: #1a5e3a;
+      color: var(--green-hi);
+    }
+    .btn-api:not(:disabled):hover {
+      background: rgba(45,110,78,.3);
+    }
+
+    /* ── Loading spinner ── */
+    .spinner {
+      display: none;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,.2);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading .spinner { display: inline-block; }
+    .loading .btn-icon { display: none; }
+
+    /* ── Feedback / alertas ── */
+    .feedback {
+      margin-top: .75rem;
+      padding: .6rem .875rem;
+      border-radius: var(--radius);
+      font-size: .85rem;
+      display: none;
+      align-items: flex-start;
+      gap: .5rem;
+      line-height: 1.5;
+    }
+
+    .feedback.show { display: flex; }
+
+    .feedback.success {
+      background: rgba(45,110,78,.12);
+      border: 1px solid #1a5e3a;
+      color: var(--green-hi);
+    }
+
+    .feedback.error {
+      background: rgba(139,26,26,.12);
+      border: 1px solid var(--blood);
+      color: #ff9999;
+    }
+
+    .feedback.info {
+      background: rgba(200,168,75,.08);
+      border: 1px solid var(--gold-dim);
+      color: var(--gold-pale);
+    }
+
+    .feedback-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Progress bar da API ── */
+    .progress-wrap {
+      display: none;
+      flex-direction: column;
+      gap: .4rem;
+      margin-top: .75rem;
+    }
+
+    .progress-wrap.show { display: flex; }
+
+    .progress-label {
+      font-family: 'Cinzel', serif;
+      font-size: .58rem;
+      color: var(--text-dim);
+      letter-spacing: .08em;
+    }
+
+    .progress-track {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--gold-dim);
+      border-radius: 2px;
+      transition: width .3s ease;
+      width: 0%;
+    }
+
+    /* ── Tabela de prévia ── */
+    .preview-section {
+      display: none;
+    }
+
+    .preview-section.show { display: block; }
+
+    .preview-count {
+      font-family: 'Cinzel', serif;
+      font-size: .7rem;
+      color: var(--text-dim);
+      margin-bottom: .75rem;
+    }
+
+    .preview-count strong { color: var(--gold); }
+
+    .preview-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem;
+    }
+
+    thead tr {
+      background: var(--raised);
+      border-bottom: 1px solid var(--border-hi);
+    }
+
+    th {
+      font-family: 'Cinzel', serif;
+      font-size: .55rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      padding: .5rem .75rem;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: .4rem .75rem;
+      color: var(--text);
+      border-bottom: 1px solid rgba(46,37,24,.4);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(200,168,75,.03); }
+
+    .lvl-badge {
+      font-family: 'Cinzel', serif;
+      font-size: .6rem;
+      background: var(--gold-dim);
+      color: var(--bg);
+      padding: 1px 6px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .lvl-badge.cantrip { background: var(--blood); }
+
+    .school-txt { font-size: .75rem; color: var(--text-dim); font-style: italic; }
+    .desc-txt { font-size: .78rem; color: var(--text-dim); max-width: 300px; }
+
+    /* ── Biblioteca local ── */
+    .lib-search {
+      width: 100%;
+      background: rgba(0,0,0,.2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: .4rem .6rem;
+      font-size: .9rem;
+      margin-bottom: .75rem;
+    }
+
+    .lib-search:focus { outline: none; border-color: var(--gold-dim); }
+    .lib-search::placeholder { color: var(--text-dim); }
+
+    .lib-empty {
+      text-align: center;
+      color: var(--text-dim);
+      font-style: italic;
+      font-size: .85rem;
+      padding: 1.5rem 0;
+    }
+
+    /* ── Divisor ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      color: var(--text-dim);
+      font-size: .75rem;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    @media (max-width: 600px) {
+      .btn-row { flex-direction: column; }
+      .btn { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <button class="back-btn" onclick="window.location.href='index.html'">← Voltar à Ficha</button>
+    <div class="page-title">Importar Magias</div>
+    <div class="page-subtitle">Cole um JSON manualmente ou busque magias diretamente da API Open5e</div>
+  </div>
+
+  <!-- ── SEÇÃO 1: JSON Manual ───────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">
+      📄 Importar via JSON
+      <span class="badge">Manual</span>
+    </div>
+
+    <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:.75rem;line-height:1.6">
+      Cole abaixo um JSON com uma ou mais magias. Pode ser um array <code style="color:var(--gold-pale)">[{...}, {...}]</code>
+      ou um objeto único <code style="color:var(--gold-pale)">{...}</code>.
+      Os campos reconhecidos são: <code style="color:var(--gold-pale)">name/nome, level/nivel, school/escola, casting_time/tempo_conjuracao, desc/descricao</code>.
+    </p>
+
+    <textarea
+      id="json-input"
+      class="json-textarea"
+      placeholder='Cole aqui seu JSON. Exemplo:
+[
+  {
+    "name": "Fireball",
+    "level": 3,
+    "school": "Evocation",
+    "casting_time": "1 action",
+    "desc": "A bright streak flashes from your pointing finger..."
+  }
+]'
+    ></textarea>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-importar-json" onclick="importarJSON()">
+        <span class="btn-icon">✦</span>
+        <span class="spinner"></span>
+        Importar JSON Colado
+      </button>
+      <button class="btn btn-secondary" onclick="limparJSON()">
+        ✕ Limpar
+      </button>
+    </div>
+
+    <div class="feedback" id="fb-json"></div>
+  </div>
+
+  <div class="divider">ou</div>
+
+  <!-- ── SEÇÃO 2: API Open5e ─────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">
+      🌐 Buscar da API Open5e
+      <span class="badge">Online</span>
+    </div>
+
+    <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:.75rem;line-height:1.6">
+      Baixa magias diretamente da <strong style="color:var(--text)">Open5e API</strong> (base SRD 5.1).
+      A requisição é feita em múltiplas páginas e pode levar alguns segundos.
+      Requer conexão com a internet.
+    </p>
+
+    <div class="btn-row">
+      <button class="btn btn-api" id="btn-buscar-api" onclick="buscarOpen5e()">
+        <span class="btn-icon">⬇</span>
+        <span class="spinner"></span>
+        Buscar Magias da API Oficial (Open5e)
+      </button>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-label" id="progress-label">Buscando página 1...</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div class="feedback" id="fb-api"></div>
+  </div>
+
+  <!-- ── SEÇÃO 3: Prévia do que será importado ──────────────────────────── -->
+  <div class="card preview-section" id="preview-section">
+    <div class="card-title">
+      👁 Prévia — Magias Encontradas
+    </div>
+
+    <div class="preview-count" id="preview-count"></div>
+
+    <div class="preview-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nível</th>
+            <th>Nome</th>
+            <th>Escola</th>
+            <th>Tempo de Conjuração</th>
+            <th>Descrição (resumo)</th>
+          </tr>
+        </thead>
+        <tbody id="preview-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="btn-row" style="margin-top:1rem">
+      <button class="btn btn-primary" id="btn-confirmar" onclick="confirmarImportacao()">
+        <span class="btn-icon">💾</span>
+        <span class="spinner"></span>
+        Confirmar e Salvar no Banco
+      </button>
+      <button class="btn btn-secondary" onclick="cancelarPrevia()">Cancelar</button>
+    </div>
+
+    <div class="feedback" id="fb-confirmar"></div>
+  </div>
+
+  <!-- ── SEÇÃO 4: Biblioteca local ──────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">
+      📚 Magias Salvas Localmente
+    </div>
+
+    <input
+      type="text"
+      class="lib-search"
+      id="lib-search"
+      placeholder="🔍 Filtrar por nome ou escola..."
+      oninput="filtrarBiblioteca(this.value)"
+    >
+
+    <div id="lib-container">
+      <div class="lib-empty">Carregando biblioteca...</div>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<script src="importar-magias.js"></script>
+</body>
+</html>
