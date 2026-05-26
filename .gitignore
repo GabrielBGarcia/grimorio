@@ -7,3 +7,20 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Node
+node_modules/
+
+# Electron build output
+dist/
+
+# Database local
+database/
+
+# Executáveis e build artifacts
+*.exe
+*.blockmap
+*.dmg
+*.AppImage
+builder-debug.yml
+builder-effective-config.yaml
