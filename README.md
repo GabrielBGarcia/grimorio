@@ -1,128 +1,102 @@
-# Grimório — Ficha de RPG
+<div align="center">
 
-Uma aplicação web moderna para gerenciar fichas de RPG medieval com estética dark minimalista. Perfeita para mestres e jogadores que desejam uma ferramenta simples, funcional e offline.
+# ⚔ Grimório — Ficha de RPG
 
-## 📋 Características
+**Ficha de personagem digital para D&D 5e e sistemas homebrew**  
+Aplicativo desktop feito com Electron · Dark Medieval · 100% offline
 
-- ✓ Sistema de HP e atributos
-- ✓ Gerenciador de inventário completo
-- ✓ Biblioteca de magias
-- ✓ Sistema de talentos
-- ✓ Homebrew manager (crie conteúdo personalizado)
-- ✓ Upload e gerenciamento de retratos
-- ✓ Exportação de dados em JSON e ZIP
-- ✓ Funciona offline (sem necessidade de servidor)
-
-## 🚀 Como Baixar
-
-### Opção 1: Clonar com Git
-```bash
-git clone https://github.com/seu-usuario/grimorio.git
-cd grimorio
-```
-
-### Opção 2: Baixar como ZIP
-1. Acesse o repositório do projeto
-2. Clique no botão **Code** (verde)
-3. Selecione **Download ZIP**
-4. Extraia o arquivo em uma pasta de sua escolha
-
-## 💻 Como Instalar e Executar
-
-### Requisitos
-- Um navegador moderno (Chrome, Firefox, Edge, Safari)
-- Nenhuma instalação adicional necessária
-
-### Instalação Rápida
-
-#### No Windows:
-```bash
-setup.bat
-```
-
-#### No macOS/Linux:
-```bash
-bash setup.sh
-```
-
-### Execução Manual
-
-1. Navegue até a pasta do projeto
-2. Abra o arquivo `index.html` diretamente no navegador de sua escolha
-3. A aplicação iniciará automaticamente
-
-#### Alternativa - Usar um servidor local (recomendado):
-```bash
-# Com Python 3
-python -m http.server 8000
-
-# Com Node.js
-npx http-server
-```
-
-Então acesse `http://localhost:8000` no seu navegador.
-
-## 📁 Estrutura do Projeto
-
-```
-grimorio/
-├── index.html              # Página principal da aplicação
-├── package.json            # Dependências do projeto
-├── setup.bat              # Script de instalação (Windows)
-├── setup.sh               # Script de instalação (Unix/Linux)
-├── css/                   # Estilos globais
-│   ├── components.css
-│   └── layout.css
-├── js/                    # Scripts principais
-│   ├── constants.js
-│   ├── data.js
-│   ├── homebrew.js
-│   ├── inventory.js
-│   ├── sheet.js
-│   └── spells.js
-├── src/                   # Código-fonte adicional
-│   ├── importar-magias.html
-│   ├── importar-magias.js
-│   └── [css e js internos]
-├── database/              # Arquivos de banco de dados
-├── electron/              # Configurações para desktop (Electron)
-└── LEIA-ME.md            # Documentação em português
-```
-
-## 🎮 Como Usar
-
-1. **Abra a aplicação** seguindo as instruções acima
-2. **Crie sua ficha** preenchendo os dados básicos do personagem
-3. **Gerencie recursos:**
-   - Atributos e HP na seção principal
-   - Inventário para guardar itens
-   - Magias para listar seus feitiços
-4. **Personalize** usando o Homebrew manager
-5. **Exporte sua ficha** em JSON ou ZIP para backup
-
-## 🔧 Desenvolvimento
-
-Se desejar modificar ou contribuir:
-
-```bash
-# Instale as dependências
-npm install
-
-# Inicie com Electron (desktop)
-npm start
-```
-
-## 📝 Licença
-
-Verifique o arquivo LICENSE para mais informações.
-
-## 🤝 Suporte
-
-Encontrou um bug? Tem uma sugestão?
-- Abra uma issue no repositório
-- Envie um pull request com suas melhorias
+</div>
 
 ---
 
-**Versão:** 1.0  
-**Última atualização:** Maio de 2026
+## ✨ Funcionalidades
+
+- 🧙 Criação e gerenciamento de múltiplos personagens
+- ❤️ Tracker de HP com barra visual e saves de morte
+- 🎒 Inventário com peso, moedas e busca
+- ✦ Grimório de magias (SRD + homebrew)
+- ⚗ Gerenciador de conteúdo homebrew (raças, classes, magias, itens)
+- 🔗 Sincronização de homebrew por URL — o Mestre exporta, os players importam com um clique
+- 📦 Exportação e importação por JSON e ZIP
+- 🖼 Retrato do personagem com galeria de imagens extras
+- 💾 Auto-save com suporte a desfazer
+
+---
+
+## 🚀 Como executar
+
+### Opção 1 — Executável (recomendado)
+1. Baixe o instalador em [Releases](https://github.com/GabrielBGarcia/grimorio/releases)
+2. Execute o `.exe` e instale normalmente
+
+### Opção 2 — Rodar pelo código fonte
+```bash
+# Clone o repositório
+git clone https://github.com/GabrielBGarcia/grimorio.git
+cd grimorio
+
+# Instale as dependências
+npm install
+
+# Rode em modo desenvolvimento
+npm start
+```
+
+---
+
+## 🔗 Sistema de Sincronização (Mestre → Players)
+
+O Mestre cria o conteúdo homebrew da campanha e distribui para os players via link:
+
+1. **Mestre:** Abre o app → **🔗 Sincronizar** → aba **Exportar** → baixa o `grimorio-homebrew.json`
+2. **Mestre:** Sobe o arquivo no Google Drive / GitHub / qualquer servidor e copia o link
+3. **Players:** Abrem o app → **🔗 Sincronizar** → colam o link → clicam em **Sincronizar**
+
+> 💡 Links do Google Drive são convertidos automaticamente para download direto.
+
+---
+
+## 📁 Estrutura do projeto
+
+```
+grimorio/
+├── electron/
+│   ├── main.js          # Processo principal do Electron
+│   └── preload.js       # Bridge entre Electron e frontend
+├── src/
+│   ├── index.html       # Aplicação principal (ficha de personagem)
+│   ├── importar-magias.html  # Importador de magias SRD
+│   ├── css/             # Estilos separados
+│   └── js/              # Módulos JavaScript
+│       ├── data.js      # Persistência e schema
+│       ├── sheet.js     # Lógica da ficha
+│       ├── spells.js    # Sistema de magias
+│       ├── inventory.js # Sistema de inventário
+│       ├── homebrew.js  # Gerenciador homebrew
+│       └── constants.js # Dados SRD (raças, classes, magias)
+├── package.json
+└── .gitignore
+```
+
+---
+
+## 🛠 Tecnologias
+
+| | |
+|---|---|
+| **Electron** | App desktop multiplataforma |
+| **HTML/CSS/JS** | Frontend puro, sem frameworks |
+| **localStorage** | Persistência local dos dados |
+| **JSZip** | Exportação em ZIP com imagens |
+
+---
+
+## 📜 Licença
+
+Projeto pessoal de uso livre. Conteúdo SRD de D&D 5e sob licença OGL da Wizards of the Coast.
+
+---
+
+<div align="center">
+  Feito com ⚔ por <a href="https://github.com/GabrielBGarcia">GabrielBGarcia</a>
+</div>
